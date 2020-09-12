@@ -30,9 +30,17 @@ defmodule MixVersion.UpgradeState do
     struct(state, changed_files: [path | files])
   end
 
-  defp bump(vsn, key) do
-    vsn
-    |> Map.update!(key, &(&1 + 1))
-    |> Map.put(:pre, [])
-  end
+  # When bumping the patch of a version with a pre-release tag, we will just
+  # drop this pre-release tag.
+  def bump(%Version{pre: [_ | _]} = vsn, :patch),
+    do: Map.put(vsn, :pre, [])
+
+  def bump(%Version{} = vsn, :patch),
+    do: Map.update!(vsn, :patch, &(&1 + 1))
+
+  def bump(%Version{minor: minor} = vsn, :minor),
+    do: Map.merge(vsn, %{minor: minor + 1, patch: 0, pre: []})
+
+  def bump(%Version{major: major} = vsn, :major),
+    do: Map.merge(vsn, %{major: major + 1, minor: 0, patch: 0, pre: []})
 end
