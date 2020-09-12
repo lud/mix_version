@@ -18,6 +18,16 @@ mix archive.install hex mix_version 1.0.0
 
 ## Configuration
 
+The tag prefix and commit messages can be customized by mix config:
+
+```
+config :mix_version,
+  tag_prefix: "release-",
+  commit_msg: "new version: %s"
+```
+
+In the commit message, any occurence of `%s` will be replaced by the new version number. The presence of `%s` is not mandatory.
+
 ## Usage
 
 Call the command from within a mix project. With no options, you will be prompted for the new version number.
@@ -28,7 +38,7 @@ mix version [options]
 
 ### Options
 
-Versions managed by Elixir follow the <major>.<minor>.<patch> scheme, with optionnaly a pre-release tag as in `1.0.0-RC2`.
+Versions managed by Elixir follow the <major>.<minor>.<patch> scheme, with optionnaly a pre-release tag as in `1.0.0-rc2`.
 
 
 - `--major, -M` – Bump the major number.
@@ -41,14 +51,14 @@ When using the options to bump a part of the version, a pre-release tag will be 
 
 ```
 Bump patch
-  1.2.3-RC1  ->  1.2.3
+  1.2.3-rc1  ->  1.2.3
   1.2.3      ->  1.2.4
 
 Bump minor:
-  1.2.3-RC1  ->  1.3.0
+  1.2.3-rc1  ->  1.3.0
   1.2.3      ->  1.2.0
 
 Bump major:
-  1.2.3-RC1  ->  2.0.0
+  1.2.3-rc1  ->  2.0.0
   1.2.3      ->  2.0.0
 ```
