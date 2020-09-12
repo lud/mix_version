@@ -6,8 +6,6 @@ This is a simple tool to update the version number of an elixir project in the `
 
 Check out [version_tasks](https://hex.pm/packages/version_tasks) for a more complete solution.
 
-**TODO: Add description**
-
 ## Installation
 
 This tool is not meant to be used as a dependency but rather as a command line tool.
@@ -40,17 +38,19 @@ mix version [options]
 
 Versions managed by Elixir follow the <major>.<minor>.<patch> scheme, with optionnaly a pre-release tag as in `1.0.0-rc2`.
 
-
-- `--major, -M` – Bump the major number.
-- `--minor, -m` – Bump the minor number.
-- `--patch, -p` – Bump the patch number.
-- `--new-version, -n` – Directly enter the new version number.
-
+```
+-M  --major                        Bump the major number.
+-m  --minor                        Bump the minor number.
+-p  --patch                        Bump the patch number.
+-n  --new-version                  Directly enter the new version number.
+    --tag-prefix <prefix>          Override the tag prefix.
+    --commit-msg <format>          Override the commit message format.
+```
 
 When using the options to bump a part of the version, a pre-release tag will be dropped for a manor or minor bump, whereas a patch bump will only remove this pre-release tag and keep the current patch number.
 
 ```
-Bump patch
+Bump patch:
   1.2.3-rc1  ->  1.2.3
   1.2.3      ->  1.2.4
 

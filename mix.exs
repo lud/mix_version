@@ -5,9 +5,14 @@ defmodule MixVersion.MixProject do
     [
       app: :mix_version,
       version: "0.0.1",
+      description:
+        "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      package: package(),
+      source_url: "https://github.com/lud/mix_version"
     ]
   end
 
@@ -19,7 +24,20 @@ defmodule MixVersion.MixProject do
 
   defp deps do
     [
-      {:inch_ex, "~> 2.0", only: :dev}
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "MixVersion"
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"Github" => "https://github.com/lud/mix_version"}
     ]
   end
 end
