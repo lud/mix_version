@@ -10,13 +10,9 @@ defmodule MixVersion.Options do
             new_version: nil
 
   def from_env() do
-    otp_app = Keyword.fetch!(Mix.Project.config(), :app)
-
-    mv_config = Application.get_env(otp_app, :mix_version, [])
-
     struct(__MODULE__,
-      tag_prefix: Keyword.get(mv_config, :tag_prefix, @default_tag_prefix),
-      commit_msg: Keyword.get(mv_config, :commit_msg, @default_commit_msg)
+      tag_prefix: Application.get_env(:mix_version, :tag_prefix, @default_tag_prefix),
+      commit_msg: Application.get_env(:mix_version, :commit_msg, @default_commit_msg)
     )
   end
 
