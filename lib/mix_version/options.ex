@@ -7,7 +7,8 @@ defmodule MixVersion.Options do
             major: false,
             minor: false,
             patch: false,
-            new_version: nil
+            new_version: nil,
+            git_only: false
 
   def from_env() do
     struct(__MODULE__,
@@ -23,13 +24,15 @@ defmodule MixVersion.Options do
       minor: :boolean,
       patch: :boolean,
       tag_prefix: :string,
-      commit_msg: :string
+      commit_msg: :string,
+      git_only: :boolean
     ],
     aliases: [
       M: :major,
       m: :minor,
       p: :patch,
-      n: :new_version
+      n: :new_version,
+      g: :git_only
     ]
   ]
 

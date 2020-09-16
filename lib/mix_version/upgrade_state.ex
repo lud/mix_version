@@ -2,7 +2,11 @@ defmodule MixVersion.UpgradeState do
   @moduledoc """
   Module describing the state of a version upgrade.
   """
-  defstruct [:current_vsn, :next_vsn, changed_files: [], opts: %MixVersion.Options{}]
+  defstruct current_vsn: nil,
+            next_vsn: nil,
+            changed_files: [],
+            opts: %MixVersion.Options{},
+            git_repo: nil
 
   def from_project() do
     project_config = Mix.Project.config()
@@ -12,11 +16,24 @@ defmodule MixVersion.UpgradeState do
     struct(__MODULE__, current_vsn: current_vsn)
   end
 
+  @doc """
+  Returns a state where the current version of the project is considered the
+  :next_vsn of the upgrade state. The :current_vsn will be `nil`.
+  """
+  def from_project_as_new() do
+    project_config = Mix.Project.config()
+    next_vsn_str = Keyword.fetch!(project_config, :version)
+    next_vsn = Version.parse!(next_vsn_str)
+
+    struct(__MODULE__, next_vsn: next_vsn)
+  end
+
   def set_opts(%__MODULE__{} = state, %MixVersion.Options{} = opts) do
     # Put the new version in the state directly as we know this is our target.
     next_vsn =
       cond do
         opts.new_version != nil -> opts.new_version
+        state.next_vsn != nil -> state.next_vsn
         opts.major -> bump(state.current_vsn, :major)
         opts.minor -> bump(state.current_vsn, :minor)
         opts.patch -> bump(state.current_vsn, :patch)

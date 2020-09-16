@@ -11,7 +11,7 @@ Check out [version_tasks](https://hex.pm/packages/version_tasks) for a more comp
 This tool is not meant to be used as a dependency but rather as a command line tool.
 
 ```bash
-mix archive.install hex mix_version 1.0.0
+mix archive.install hex mix_version
 ```
 
 ## Configuration

@@ -25,6 +25,38 @@ defmodule MixVersion.Git do
     end
   end
 
+  def get_unstaged(%Repo{root: root} = repo, opts \\ []) do
+    case git(["status", "--porcelain=v1"], cd: root, stderr_to_stdout: true) do
+      {:ok, output} ->
+        untracked =
+          for {_, unstaged_state, path} <- parse_git_status(output), unstaged_state != ?\s do
+            path
+          end
+
+        to_ignore = (opts[:ignore] || []) |> Enum.map(&relative_path!(repo, &1))
+        {:ok, untracked -- to_ignore}
+
+      err ->
+        err
+    end
+  end
+
+  defp parse_git_status(status_out) do
+    status_out
+    |> String.trim_trailing()
+    |> String.replace("\r\n", "\n")
+    |> case do
+      "" ->
+        []
+
+      out ->
+        out
+        |> String.split("\n")
+        # parse the first char: the staged state, second char: unstaged state
+        |> Enum.map(fn <<staged, unstaged, " ", path::binary>> -> {staged, unstaged, path} end)
+    end
+  end
+
   def add(%Repo{root: root} = repo, path) do
     with {:ok, relpath} <- relative_path(repo, path),
          {:ok, _} <- git(["add", relpath], cd: root) do
@@ -33,14 +65,21 @@ defmodule MixVersion.Git do
   end
 
   def commit(%Repo{root: root} = repo, message) do
-    with {:ok, _} <- git(["commit", "-m", message], cd: root) do
+    with {:ok, _} <- git(["commit", "-m", message], cd: root, stderr_to_stdout: true) do
       {:ok, repo}
     end
   end
 
   def tag(%Repo{root: root} = repo, name) do
-    with {:ok, _} <- git(["tag", name], cd: root) do
+    with {:ok, _} <- git(["tag", name], cd: root, stderr_to_stdout: true) do
       {:ok, repo}
+    end
+  end
+
+  def relative_path!(%Repo{root: root} = repo, path) do
+    case relative_path(repo, path) do
+      {:ok, rel} -> rel
+      {:error, reason} -> raise "Could not figure out relative path from #{root} for #{path}"
     end
   end
 
