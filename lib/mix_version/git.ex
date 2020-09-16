@@ -79,7 +79,7 @@ defmodule MixVersion.Git do
   def relative_path!(%Repo{root: root} = repo, path) do
     case relative_path(repo, path) do
       {:ok, rel} -> rel
-      {:error, reason} -> raise "Could not figure out relative path from #{root} for #{path}"
+      {:error, _} -> raise "Could not figure out relative path from #{root} for #{path}"
     end
   end
 

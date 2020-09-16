@@ -159,7 +159,7 @@ defmodule Mix.Tasks.Version do
   end
 
   defp git_add_files(state) do
-    with {:ok, repo} <- do_add_files(state.git_repo, state.changed_files) do
+    with {:ok, _} <- do_add_files(state.git_repo, state.changed_files) do
       {:ok, state}
     end
   end

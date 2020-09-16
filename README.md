@@ -45,6 +45,7 @@ Versions managed by Elixir follow the <major>.<minor>.<patch> scheme, with optio
 -n  --new-version                  Directly enter the new version number.
     --tag-prefix <prefix>          Override the tag prefix.
     --commit-msg <format>          Override the commit message format.
+-g  --git-only
 ```
 
 When using the options to bump a part of the version, a pre-release tag will be dropped for a manor or minor bump, whereas a patch bump will only remove this pre-release tag and keep the current patch number.
