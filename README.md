@@ -36,7 +36,7 @@ mix version [options]
 
 ### Options
 
-Versions managed by Elixir follow the <major>.<minor>.<patch> scheme, with optionnaly a pre-release tag as in `1.0.0-rc2`.
+Versions managed by Elixir follow the `MAJOR.MINOR.PATCH` scheme, with optionnaly a pre-release tag as in `1.0.0-rc2`.
 
 ```
 -M  --major                        Bump the major number.
