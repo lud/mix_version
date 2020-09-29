@@ -16,14 +16,11 @@ defmodule Mix.Tasks.Version do
   end
 
   defp create_state(opts) do
-    state =
-      if opts.git_only do
-        UpgradeState.from_project_as_new()
-      else
-        UpgradeState.from_project()
-      end
-
-    {:ok, state}
+    if opts.git_only do
+      UpgradeState.from_project_as_new()
+    else
+      UpgradeState.from_project()
+    end
   end
 
   defp run_steps(state) do
@@ -116,13 +113,25 @@ defmodule Mix.Tasks.Version do
   end
 
   defp swap_mixfile_version(state, content) do
-    re_current = ~r/version:\s*"#{state.current_vsn}"/
-    replacement = "version: \"#{state.next_vsn}\""
+    replace_schemes = [
+      {~r/\bversion:\s+"#{state.current_vsn}"/, "version: \"#{state.next_vsn}\""},
+      {~r/(?<=\s)@version\s+"#{state.current_vsn}"/, "@version \"#{state.next_vsn}\""}
+    ]
 
-    if Regex.match?(re_current, content) do
-      {:ok, String.replace(content, re_current, replacement)}
-    else
-      {:error, "Could not find version to replace in mixfile"}
+    for {regex, replacement} <- replace_schemes, reduce: :error do
+      :error ->
+        if Regex.match?(regex, content) do
+          {:ok, String.replace(content, regex, replacement)}
+        else
+          :error
+        end
+
+      {:ok, _content} = ok ->
+        ok
+    end
+    |> case do
+      :error -> {:error, "Could not find version to replace in mixfile"}
+      ok -> ok
     end
   end
 
@@ -200,6 +209,14 @@ defmodule Mix.Tasks.Version do
 
   defp format_error(:no_git_repo),
     do: "Not in a git repository"
+
+  defp format_error(:no_project_version) do
+    """
+    Could not figure out current version.
+    Is #{File.cwd!()} a mix project?
+    """
+    |> String.trim()
+  end
 
   defp format_error({:system_cmd, cmd, args, output, _}) do
     "Error when running command #{cmd} #{Enum.join(args, " ")}:\n" <>

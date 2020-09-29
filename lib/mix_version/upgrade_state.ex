@@ -9,11 +9,7 @@ defmodule MixVersion.UpgradeState do
             git_repo: nil
 
   def from_project() do
-    project_config = Mix.Project.config()
-    current_vsn_str = Keyword.fetch!(project_config, :version)
-    current_vsn = Version.parse!(current_vsn_str)
-
-    struct(__MODULE__, current_vsn: current_vsn)
+    from_project(:current_vsn)
   end
 
   @doc """
@@ -21,11 +17,20 @@ defmodule MixVersion.UpgradeState do
   :next_vsn of the upgrade state. The :current_vsn will be `nil`.
   """
   def from_project_as_new() do
-    project_config = Mix.Project.config()
-    next_vsn_str = Keyword.fetch!(project_config, :version)
-    next_vsn = Version.parse!(next_vsn_str)
+    from_project(:next_vsn)
+  end
 
-    struct(__MODULE__, next_vsn: next_vsn)
+  defp from_project(vsn_key) do
+    project_config = Mix.Project.config()
+
+    case Keyword.fetch(project_config, :version) do
+      {:ok, current_vsn_str} ->
+        current_vsn = Version.parse!(current_vsn_str)
+        {:ok, struct(__MODULE__, [{vsn_key, current_vsn}])}
+
+      :error ->
+        {:stop, :no_project_version}
+    end
   end
 
   def set_opts(%__MODULE__{} = state, %MixVersion.Options{} = opts) do
