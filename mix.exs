@@ -4,7 +4,7 @@ defmodule MixVersion.MixProject do
   def project do
     [
       app: :mix_version,
-      version: "1.2.0",
+      version: "1.2.1",
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
@@ -37,7 +37,11 @@ defmodule MixVersion.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      links: %{"Github" => "https://github.com/lud/mix_version"}
+      links: %{
+        "Github" => "https://github.com/lud/mix_version",
+        "Do not install as a dependency, but rather as a mix tool available globally" =>
+          "https://github.com/lud/mix_version#installation"
+      }
     ]
   end
 end
