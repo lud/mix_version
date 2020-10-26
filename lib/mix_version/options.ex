@@ -1,20 +1,17 @@
 defmodule MixVersion.Options do
-  @default_tag_prefix "v"
-  @default_commit_msg "%s"
-
-  defstruct tag_prefix: @default_tag_prefix,
-            commit_msg: @default_commit_msg,
+  defstruct tag_prefix: "v",
+            commit_msg: "%s",
+            annotation: "%s",
+            annotate: false,
+            new_version: nil,
             major: false,
             minor: false,
             patch: false,
-            new_version: nil,
-            git_only: false
+            git_only: false,
+            help: false
 
   def from_env() do
-    struct(__MODULE__,
-      tag_prefix: Application.get_env(:mix_version, :tag_prefix, @default_tag_prefix),
-      commit_msg: Application.get_env(:mix_version, :commit_msg, @default_commit_msg)
-    )
+    struct(__MODULE__, Map.new(Application.get_all_env(:mix_version)))
   end
 
   @cli_schema [
@@ -25,14 +22,21 @@ defmodule MixVersion.Options do
       patch: :boolean,
       tag_prefix: :string,
       commit_msg: :string,
-      git_only: :boolean
+      git_only: :boolean,
+      annotate: :boolean,
+      annotation: :string,
+      help: :boolean
     ],
     aliases: [
       M: :major,
       m: :minor,
       p: :patch,
       n: :new_version,
-      g: :git_only
+      g: :git_only,
+      a: :annotate,
+      A: :annotation,
+      c: :commit_msg,
+      x: :tag_prefix
     ]
   ]
 
@@ -66,8 +70,25 @@ defmodule MixVersion.Options do
           |> Enum.filter(&(&1 != nil))
           |> Enum.join("\n")
 
-        {:error, errmsg}
+        {:error, {:input_error, errmsg}}
     end
+  end
+
+  def usage do
+    """
+
+    OPTIONS
+    -M  --major                        Bump the major number.
+    -m  --minor                        Bump the minor number.
+    -p  --patch                        Bump the patch number.
+    -n  --new-version                  Directly enter the new version number.
+    -x  --tag-prefix <prefix>          Override the tag prefix.
+    -c  --commit-msg <format>          Override the commit message format.
+    -a  --annotate                     Create an annotated git tag.
+    -A  --annotation <format>          Override the annotation message format.
+    -g  --git-only                     Commit and tag with the current version.
+        --help                         Shows this help block.
+    """
   end
 
   defp transform_opts(opts) do
@@ -97,6 +118,20 @@ defmodule MixVersion.Options do
   catch
     {:error, _} = err -> err
   end
+
+  # # Copy all values from overrides into map for keys that are in both maps.
+  # defp override_map(map, overrides) when is_map(map) and is_map(overrides) do
+  #   Enum.reduce(Map.keys(map), map, fn
+  #     :__struct__, map ->
+  #       map
+
+  #     key, map ->
+  #       case Map.fetch(overrides, key) do
+  #         {:ok, new_value} -> Map.put(map, key, new_value)
+  #         :error -> map
+  #       end
+  #   end)
+  # end
 
   defp plural(list), do: plural(list, "", "s")
 

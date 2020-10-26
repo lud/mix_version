@@ -4,7 +4,7 @@ defmodule MixVersion.Git do
   end
 
   def installed?() do
-    case git(["--help"]) do
+    case exec("git", ["--help"]) do
       {:error, :command_not_found} -> false
       {:ok, _} -> true
     end
@@ -19,14 +19,14 @@ defmodule MixVersion.Git do
   end
 
   def get_repo(path) do
-    case git(["rev-parse", "--show-toplevel"], cd: path, stderr_to_stdout: true) do
-      {:ok, output} -> {:ok, struct(Repo, root: String.trim(output))}
+    case exec("git", ["rev-parse", "--show-toplevel"], cd: path, stderr_to_stdout: true) do
+      {:ok, rootpath} -> {:ok, struct(Repo, root: String.trim(rootpath))}
       {:error, {:system_cmd, _, _, _, 128}} -> {:error, :no_git_repo}
     end
   end
 
-  def get_unstaged(%Repo{root: root} = repo, opts \\ []) do
-    case git(["status", "--porcelain=v1"], cd: root, stderr_to_stdout: true) do
+  def get_unstaged(%Repo{} = repo, opts \\ []) do
+    case git(repo, ["status", "--porcelain=v1"]) do
       {:ok, output} ->
         untracked =
           for {_, unstaged_state, path} <- parse_git_status(output), unstaged_state != ?\s do
@@ -35,6 +35,22 @@ defmodule MixVersion.Git do
 
         to_ignore = (opts[:ignore] || []) |> Enum.map(&relative_path!(repo, &1))
         {:ok, untracked -- to_ignore}
+
+      err ->
+        err
+    end
+  end
+
+  def check_tag_availability(%Repo{} = repo, tag) when is_binary(tag) do
+    case git(repo, ["tag", "-l"]) do
+      {:ok, taglist} ->
+        tags = String.split(taglist, "\n")
+
+        if Enum.member?(tags, tag) do
+          {:error, :tag_exists}
+        else
+          :ok
+        end
 
       err ->
         err
@@ -57,22 +73,29 @@ defmodule MixVersion.Git do
     end
   end
 
-  def add(%Repo{root: root} = repo, path) do
+  def add(%Repo{} = repo, path) do
     with {:ok, relpath} <- relative_path(repo, path),
-         {:ok, _} <- git(["add", relpath], cd: root) do
-      {:ok, repo}
+         {:ok, _} <- git(repo, ["add", relpath]) do
+      :ok
     end
   end
 
-  def commit(%Repo{root: root} = repo, message) do
-    with {:ok, _} <- git(["commit", "-m", message], cd: root, stderr_to_stdout: true) do
-      {:ok, repo}
+  def commit(%Repo{} = repo, message) do
+    with {:ok, _} <- git(repo, ["commit", "-m", message]) do
+      :ok
     end
   end
 
-  def tag(%Repo{root: root} = repo, name) do
-    with {:ok, _} <- git(["tag", name], cd: root, stderr_to_stdout: true) do
-      {:ok, repo}
+  def tag(%Repo{} = repo, name, opts) do
+    args =
+      if Keyword.get(opts, :annotate, false) do
+        ["tag", name, "-a", "-m", Keyword.fetch!(opts, :annotation)]
+      else
+        ["tag", name]
+      end
+
+    with {:ok, _} <- git(repo, args) do
+      :ok
     end
   end
 
@@ -93,9 +116,16 @@ defmodule MixVersion.Git do
     end
   end
 
-  defp git(args, opts \\ []), do: exec("git", args, opts)
+  defp git(%Repo{root: root}, args, opts \\ []) when is_list(args) do
+    opts =
+      opts
+      |> Keyword.put_new(:stderr_to_stdout, true)
+      |> Keyword.put_new(:cd, root)
 
-  defp exec(cmd, args, opts) do
+    exec("git", args, opts)
+  end
+
+  defp exec(cmd, args, opts \\ []) do
     case System.cmd(cmd, args, opts) do
       {output, 0} ->
         {:ok, String.trim_trailing(output)}

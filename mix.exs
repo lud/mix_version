@@ -40,7 +40,8 @@ defmodule MixVersion.MixProject do
       links: %{
         "Github" => "https://github.com/lud/mix_version",
         "Do not install as a dependency, but rather as a mix tool available globally" =>
-          "https://github.com/lud/mix_version#installation"
+          "https://github.com/lud/mix_version#installation",
+        "CHANGELOG" => "https://github.com/lud/mix_version/blob/master/CHANGELOG.md"
       }
     ]
   end

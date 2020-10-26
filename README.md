@@ -8,7 +8,7 @@ Check out [version_tasks](https://hex.pm/packages/version_tasks) for a more comp
 
 ## Installation
 
-This tool is not meant to be used as a dependency but rather as a command line tool.
+Although this tool can be set as a dependency in you mix projects, is is rather intended to be used as a globally available command line tool.
 
 ```bash
 mix archive.install hex mix_version
@@ -16,15 +16,30 @@ mix archive.install hex mix_version
 
 ## Configuration
 
-The tag prefix and commit messages can be customized by mix config:
+The different options can be customized with mix configuration:
 
 ```
+import Config
+
 config :mix_version,
   tag_prefix: "release-",
-  commit_msg: "new version: %s"
+  commit_msg: "new version: %s",
+  annotation: "tag release-%s created with mix_version",
+  annotate: true
 ```
 
-In the commit message, any occurence of `%s` will be replaced by the new version number. The presence of `%s` is not mandatory.
+In the commit message and annotation, any occurence of `%s` will be replaced by the new version number. The presence of `%s` is not mandatory.
+
+Configuration can be overriden by command line options. If `:annotate` is set to `true` in configuration, you can use the `--no-annotate` CLI flag to force it to be `false`.
+
+### Default configuration
+
+```
+tag_prefix    "v"
+commit_msg    "%s"
+annotation    "%s"
+annotate      false
+```
 
 ## Usage
 
@@ -43,12 +58,15 @@ Versions managed by Elixir follow the `MAJOR.MINOR.PATCH` scheme, with optionnal
 -m  --minor                        Bump the minor number.
 -p  --patch                        Bump the patch number.
 -n  --new-version                  Directly enter the new version number.
-    --tag-prefix <prefix>          Override the tag prefix.
-    --commit-msg <format>          Override the commit message format.
--g  --git-only
+-x  --tag-prefix <prefix>          Override the tag prefix.
+-c  --commit-msg <format>          Override the commit message format.
+-a  --annotate                     Create an annotated git tag.
+-A  --annotation <format>          Override the annotation message format.
+-g  --git-only                     Commit and tag with the current version.
+    --help                         Shows this help block.
 ```
 
-When using the options to bump a part of the version, a pre-release tag will be dropped for a manor or minor bump, whereas a patch bump will only remove this pre-release tag and keep the current patch number.
+When using the options to bump a part of the version, a pre-release tag will be dropped for a major or minor bump, whereas a patch bump will only remove this pre-release tag and keep the current patch number.
 
 ```
 Bump patch:

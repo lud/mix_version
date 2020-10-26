@@ -1,1 +1,3 @@
-use Mix.Config
+import Config
+
+config :mix_version, annotate: true

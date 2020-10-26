@@ -4,14 +4,27 @@ defmodule Mix.Tasks.Version do
   alias MixVersion.Git
 
   def run(argv) do
+    IO.puts([
+      IO.ANSI.light_black(),
+      "mix version v#{MixVersion.self_vsn()}",
+      IO.ANSI.default_color()
+    ])
+
     with {:ok, opts} <- Options.merge_cli_args(Options.from_env(), argv),
          {:ok, state} <- create_state(opts),
          state = UpgradeState.set_opts(state, opts),
          {:ok, _state} <- run_steps(state) do
       IO.puts("ok")
     else
-      {:stop, reason} -> reason |> format_error |> yellow |> IO.puts()
-      {:error, reason} -> reason |> format_error |> red |> IO.puts()
+      {:stop, reason} ->
+        reason |> format_error |> yellow |> IO.puts()
+
+      {:error, {:input_error, reason}} ->
+        IO.puts(Options.usage())
+        reason |> format_error |> red |> IO.puts()
+
+      {:error, reason} ->
+        reason |> format_error |> red |> IO.puts()
     end
   end
 
@@ -24,8 +37,13 @@ defmodule Mix.Tasks.Version do
   end
 
   defp run_steps(state) do
-    steps =
-      if state.opts.git_only do
+    cond do
+      state.opts.help ->
+        [
+          &show_help/1
+        ]
+
+      state.opts.git_only ->
         [
           &print_next_version/1,
           &check_git_repo/1,
@@ -33,7 +51,8 @@ defmodule Mix.Tasks.Version do
           &check_git_unstaged/1,
           &git_commit_and_tag/1
         ]
-      else
+
+      true ->
         [
           &print_current_version/1,
           &maybe_prompt_version/1,
@@ -44,15 +63,19 @@ defmodule Mix.Tasks.Version do
           &check_git_unstaged/1,
           &git_commit_and_tag/1
         ]
-      end
-
-    reduce_ok(steps, state, fn step, state -> call_step(step, state) end)
+    end
+    |> reduce_ok(state, fn step, state -> call_step(step, state) end)
   end
 
   defp call_step(fun, state) when is_function(fun, 1),
     do: fun.(state)
 
   # -- STEPS ------------------------------------------------------------------
+
+  defp show_help(state) do
+    IO.puts(Options.usage())
+    {:ok, state}
+  end
 
   defp print_current_version(%{current_vsn: vsn} = state) do
     IO.puts("Current version: #{vsn}")
@@ -135,7 +158,7 @@ defmodule Mix.Tasks.Version do
     end
   end
 
-  def check_git_repo(state) do
+  defp check_git_repo(state) do
     with :ok <- Git.check_cmd(),
          {:ok, repo} <- Git.get_repo(File.cwd!()) do
       {:ok, %UpgradeState{state | git_repo: repo}}
@@ -144,7 +167,7 @@ defmodule Mix.Tasks.Version do
     end
   end
 
-  def check_git_unstaged(state) do
+  defp check_git_unstaged(state) do
     case Git.get_unstaged(state.git_repo, ignore: state.changed_files) do
       {:ok, []} ->
         {:ok, state}
@@ -152,6 +175,7 @@ defmodule Mix.Tasks.Version do
       {:ok, paths} ->
         IO.puts(yellow("Unstaged changes:"))
         IO.puts(yellow(paths |> Enum.map(&"  #{&1}") |> Enum.join("\n")))
+        IO.puts(["Unstaged changes ", yellow("will not be added"), " to the commit"])
 
         if Mix.Shell.IO.yes?(IO.iodata_to_binary("Confirm commit & tag?")) do
           {:ok, state}
@@ -168,26 +192,43 @@ defmodule Mix.Tasks.Version do
   end
 
   defp git_add_files(state) do
-    with {:ok, _} <- do_add_files(state.git_repo, state.changed_files) do
+    with :ok <- do_add_files(state.git_repo, state.changed_files) do
       {:ok, state}
     end
   end
 
-  defp do_add_files(repo, files) do
-    reduce_ok(files, repo, fn file, repo -> Git.add(repo, file) end)
+  defp do_add_files(repo, [file | files]) do
+    case Git.add(repo, file) do
+      :ok -> do_add_files(repo, files)
+      err -> err
+    end
+  end
+
+  defp do_add_files(_, []) do
+    :ok
+  end
+
+  defp sprintf(format, replacement) do
+    String.replace(format, "%s", replacement)
   end
 
   defp git_commit_and_tag(state) do
-    commit_msg = String.replace(state.opts.commit_msg, "%s", to_string(state.next_vsn))
-    tag_name = state.opts.tag_prefix <> to_string(state.next_vsn)
+    vsn_str = to_string(state.next_vsn)
+    commit_msg = sprintf(state.opts.commit_msg, vsn_str)
+    tag_name = state.opts.tag_prefix <> vsn_str
+    annotation = sprintf(state.opts.annotation, vsn_str)
 
-    with {:ok, repo} <- Git.commit(state.git_repo, commit_msg),
-         {:ok, _repo} <- Git.tag(repo, tag_name) do
+    repo = state.git_repo
+
+    tag_opts = [
+      annotate: state.opts.annotate,
+      annotation: annotation
+    ]
+
+    with :ok <- Git.check_tag_availability(repo, tag_name),
+         :ok <- Git.commit(repo, commit_msg),
+         :ok <- Git.tag(repo, tag_name, tag_opts) do
       {:ok, state}
-    end
-    |> case do
-      {:error, :no_git_repo} -> {:stop, :no_git_repo}
-      other -> other
     end
   end
 
@@ -206,6 +247,9 @@ defmodule Mix.Tasks.Version do
 
   defp format_error(:no_git),
     do: "Git command not found"
+
+  defp format_error(:tag_exists),
+    do: "Git tag already exists"
 
   defp format_error(:no_git_repo),
     do: "Not in a git repository"
