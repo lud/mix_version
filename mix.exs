@@ -4,7 +4,7 @@ defmodule MixVersion.MixProject do
   def project do
     [
       app: :mix_version,
-      version: "1.3.1",
+      version: "1.3.2",
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
@@ -24,7 +24,7 @@ defmodule MixVersion.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
