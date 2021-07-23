@@ -68,6 +68,10 @@ defmodule MixVersion.Git do
       out ->
         out
         |> String.split("\n")
+        |> Enum.filter(fn
+          "warning:" <> _ -> false
+          _ -> true
+        end)
         # parse the first char: the staged state, second char: unstaged state
         |> Enum.map(fn <<staged, unstaged, " ", path::binary>> -> {staged, unstaged, path} end)
     end
