@@ -1,10 +1,10 @@
-defmodule MixVersion.Old.MixProject do
+defmodule MixVersion.MixProject do
   use Mix.Project
 
   def project do
     [
       app: :mix_version,
-      version: "1.3.2",
+      version: "1.3.3",
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
@@ -12,6 +12,7 @@ defmodule MixVersion.Old.MixProject do
       deps: deps(),
       docs: docs(),
       modkit: modkit(),
+      versioning: versioning(),
       package: package(),
       source_url: "https://github.com/lud/mix_version"
     ]
@@ -42,6 +43,12 @@ defmodule MixVersion.Old.MixProject do
         {MixVersion, "lib/mix_version"},
         {Mix.Tasks, {:mix_task, "lib/mix/tasks"}}
       ]
+    ]
+  end
+
+  defp versioning do
+    [
+      annotate: true
     ]
   end
 
