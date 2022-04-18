@@ -1,20 +1,28 @@
-defmodule MixVersion.Old.Git do
+defmodule MixVersion.Git do
+  @moduledoc """
+  This module is a simple, ad-hoc interface to the Git CLI.
+  """
+
+  import MixVersion.SysCmd
+
   defmodule Repo do
+    @moduledoc false
     defstruct root: nil
   end
 
-  def installed?() do
+  defp git(%Repo{root: root}, args, opts \\ []) when is_list(args) do
+    opts =
+      opts
+      |> Keyword.put_new(:stderr_to_stdout, true)
+      |> Keyword.put_new(:cd, root)
+
+    exec("git", args, opts)
+  end
+
+  def installed? do
     case exec("git", ["--help"]) do
       {:error, :command_not_found} -> false
       {:ok, _} -> true
-    end
-  end
-
-  def check_cmd do
-    if installed?() do
-      :ok
-    else
-      {:error, :no_git}
     end
   end
 
@@ -25,7 +33,7 @@ defmodule MixVersion.Old.Git do
     end
   end
 
-  def get_unstaged(%Repo{} = repo, opts \\ []) do
+  def get_unstaged(%Repo{} = repo) do
     case git(repo, ["status", "--porcelain=v1"]) do
       {:ok, output} ->
         untracked =
@@ -33,24 +41,7 @@ defmodule MixVersion.Old.Git do
             path
           end
 
-        to_ignore = (opts[:ignore] || []) |> Enum.map(&relative_path!(repo, &1))
-        {:ok, untracked -- to_ignore}
-
-      err ->
-        err
-    end
-  end
-
-  def check_tag_availability(%Repo{} = repo, tag) when is_binary(tag) do
-    case git(repo, ["tag", "-l"]) do
-      {:ok, taglist} ->
-        tags = String.split(taglist, "\n")
-
-        if Enum.member?(tags, tag) do
-          {:error, :tag_exists}
-        else
-          :ok
-        end
+        {:ok, untracked}
 
       err ->
         err
@@ -77,32 +68,6 @@ defmodule MixVersion.Old.Git do
     end
   end
 
-  def add(%Repo{} = repo, path) do
-    with {:ok, relpath} <- relative_path(repo, path),
-         {:ok, _} <- git(repo, ["add", relpath]) do
-      :ok
-    end
-  end
-
-  def commit(%Repo{} = repo, message) do
-    with {:ok, _} <- git(repo, ["commit", "-m", message]) do
-      :ok
-    end
-  end
-
-  def tag(%Repo{} = repo, name, opts) do
-    args =
-      if Keyword.get(opts, :annotate, false) do
-        ["tag", name, "-a", "-m", Keyword.fetch!(opts, :annotation)]
-      else
-        ["tag", name]
-      end
-
-    with {:ok, _} <- git(repo, args) do
-      :ok
-    end
-  end
-
   def relative_path!(%Repo{root: root} = repo, path) do
     case relative_path(repo, path) do
       {:ok, rel} -> rel
@@ -120,26 +85,45 @@ defmodule MixVersion.Old.Git do
     end
   end
 
-  defp git(%Repo{root: root}, args, opts \\ []) when is_list(args) do
-    opts =
-      opts
-      |> Keyword.put_new(:stderr_to_stdout, true)
-      |> Keyword.put_new(:cd, root)
-
-    exec("git", args, opts)
+  def path_relative_to(path, %Repo{} = repo) do
+    relative_path!(repo, path)
   end
 
-  defp exec(cmd, args, opts \\ []) do
-    case System.cmd(cmd, args, opts) do
-      {output, 0} ->
-        {:ok, String.trim_trailing(output)}
-
-      {output, exit_code} ->
-        {:error, {:system_cmd, cmd, args, String.trim_trailing(output), exit_code}}
+  def add(%Repo{} = repo, path) do
+    with {:ok, relpath} <- relative_path(repo, path),
+         {:ok, _} <- git(repo, ["add", relpath]) do
+      :ok
     end
-  rescue
-    e in ErlangError ->
-      %ErlangError{original: :enoent} = e
-      {:error, :command_not_found}
+  end
+
+  def commit(%Repo{} = repo, message) do
+    with {:ok, _} <- git(repo, ["commit", "-m", message]) do
+      :ok
+    end
+  end
+
+  def check_tag_availability(%Repo{} = repo, tag) when is_binary(tag) do
+    case git(repo, ["tag", "-l"]) do
+      {:ok, taglist} ->
+        tags = taglist |> String.split("\n") |> Enum.map(&String.trim/1)
+
+        {:ok, not Enum.member?(tags, tag)}
+
+      err ->
+        err
+    end
+  end
+
+  def tag(%Repo{} = repo, name, opts) do
+    args =
+      if Keyword.get(opts, :annotate, false) do
+        ["tag", name, "-a", "-m", Keyword.fetch!(opts, :annotation)]
+      else
+        ["tag", name]
+      end
+
+    with {:ok, _} <- git(repo, args) do
+      :ok
+    end
   end
 end

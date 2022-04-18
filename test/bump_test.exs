@@ -1,6 +1,5 @@
-defmodule MixVersion.Old.UpgradeStateTest do
+defmodule MixVersion.BumpTest do
   use ExUnit.Case
-  doctest MixVersion
 
   test "bump regular version" do
     assert bump("1.2.3", :patch) === "1.2.4"
@@ -17,7 +16,7 @@ defmodule MixVersion.Old.UpgradeStateTest do
   defp bump(s, part) do
     s
     |> Version.parse!()
-    |> MixVersion.UpgradeState.bump(part)
+    |> MixVersion.Stage.GetNextVsn.bump(part)
     |> to_string
   end
 end
