@@ -1,4 +1,4 @@
-defmodule MixVersion.Options do
+defmodule MixVersion.Old.Options do
   defstruct tag_prefix: "v",
             commit_msg: "%s",
             annotation: "%s",

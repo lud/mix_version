@@ -1,4 +1,4 @@
-defmodule MixVersion.UpgradeState do
+defmodule MixVersion.Old.UpgradeState do
   @moduledoc """
   Module describing the state of a version upgrade.
   """

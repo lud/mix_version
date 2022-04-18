@@ -1,4 +1,4 @@
-defmodule MixVersion.MixProject do
+defmodule MixVersion.Old.MixProject do
   use Mix.Project
 
   def project do
@@ -11,6 +11,7 @@ defmodule MixVersion.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
+      modkit: modkit(),
       package: package(),
       source_url: "https://github.com/lud/mix_version"
     ]
@@ -32,6 +33,15 @@ defmodule MixVersion.MixProject do
   defp docs do
     [
       main: "MixVersion"
+    ]
+  end
+
+  defp modkit do
+    [
+      mount: [
+        {MixVersion, "lib/mix_version"},
+        {Mix.Tasks, {:mix_task, "lib/mix/tasks"}}
+      ]
     ]
   end
 

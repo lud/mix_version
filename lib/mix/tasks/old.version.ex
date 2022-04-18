@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Version do
+defmodule Mix.Tasks.Old.Version do
   alias MixVersion.UpgradeState
   alias MixVersion.Options
   alias MixVersion.Git
@@ -181,9 +181,7 @@ defmodule Mix.Tasks.Version do
           {:ok, state}
         else
           IO.puts(
-            "tip: Use `mix version --git-only` to solely commit and tag with version #{
-              state.next_vsn
-            }"
+            "tip: Use `mix version --git-only` to solely commit and tag with version #{state.next_vsn}"
           )
 
           {:stop, "Cancelled commiting to git."}

@@ -1,4 +1,4 @@
-defmodule MixVersion.Git do
+defmodule MixVersion.Old.Git do
   defmodule Repo do
     defstruct root: nil
   end

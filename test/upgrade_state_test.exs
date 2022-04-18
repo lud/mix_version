@@ -1,4 +1,4 @@
-defmodule MixVersion.UpgradeStateTest do
+defmodule MixVersion.Old.UpgradeStateTest do
   use ExUnit.Case
   doctest MixVersion
 

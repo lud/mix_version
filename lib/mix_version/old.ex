@@ -1,4 +1,4 @@
-defmodule MixVersion do
+defmodule MixVersion.Old do
   @external_resource "README.md"
   @moduledoc File.read!("README.md")
              |> String.split("<!-- :title: -->", parts: 2)
