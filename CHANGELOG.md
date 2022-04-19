@@ -1,10 +1,16 @@
+<!-- markdownlint-disable -->
+
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [Unreleased]
+
+## [2.0.0] - 2022-04-19
+### Changed
+- The order of events has been modified in order to run all possible checks before any modification to the codebase or Git is made. This includes checking the Git tag availability and unstaged changes.
+- Any unstaged modification to `mix.exs` will now make the tool to fail.
+- The configuration for commit messages, annotations and tag prefix is now pulled from the `mix.exs` file, under a `:versioning` key returned from `project/0`. Any configuration in the app config files for the `:mix_version` OTP app is ignored.
+- The `:annotate` option now defaults to `true`, creating annotated git tags.
 
 ## [1.3.0] - 2020-10-26
 ### Added
@@ -14,5 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Versions set as module attributes in mix.exs can now be replaced
 
-[Unreleased]: https://github.com/lud/mix_version/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/lud/mix_version/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/lud/mix_version/compare/v1.3.0...v2.0.0
 [1.3.0]: https://github.com/lud/mix_version/compare/v1.2.0...v1.3.0

@@ -1,16 +1,27 @@
 defmodule Mix.Tasks.Version do
   use Mix.Task
 
+  @readme File.cwd!()
+          |> Path.join("README.md")
+          |> File.read!()
+          |> String.split("<!-- doc-start -->")
+          |> Enum.at(1)
+          |> String.split("<!-- doc-end -->")
+          |> hd()
+
   @moduledoc """
   This module implements a mix task whose main purpose is to update the version
-  number of an Elixir application, with extra steps such as committing a git tag
-  and running system commands along the way.
+  number of an Elixir application, with extra steps such as committing a git
+  tag.
+
+  #{@readme}
   """
 
   @shortdoc "Manages the version of an Elixir application"
 
   import MixVersion.Cli
 
+  @doc false
   def run(argv) do
     Mix.Task.run("app.config")
 
@@ -33,7 +44,7 @@ defmodule Mix.Tasks.Version do
       )
       |> option(:new_version, :string,
         alias: :n,
-        doc: "Sets the new version number.",
+        doc: "Set the new version number.",
         default: nil
       )
       |> option(:annotate, :boolean,

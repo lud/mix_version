@@ -1,5 +1,8 @@
 defmodule MixVersion.Token do
-  @moduledoc false
+  @moduledoc """
+  The "token" is the state of the command line execution, passed to and returned
+  from all stages.
+  """
 
   @enforce_keys [:opts, :git_cmd?, :git_repo, :current_vsn]
   @defaults [opts: nil, git_cmd?: false, git_repo: nil, current_vsn: nil, next_vsn: nil]
