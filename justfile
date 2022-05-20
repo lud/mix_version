@@ -1,15 +1,20 @@
 default:
   just --choose
 
+run:
+    mix mod.relocate
+
 install: reinstall
 
-reinstall:
-  yes | mix archive.uninstall mix_version
-  yes | mix archive.install
+reinstall: uninstall
+    mix deps.get
+    mix archive.install --force
 
 uninstall:
-  yes | mix archive.uninstall mix_version
+    rm -vf *ez
+    mix archive.uninstall mix_version --force
 
 docs:
   rm -rf _build/dev/lib/mix_version
   mix docs
+
