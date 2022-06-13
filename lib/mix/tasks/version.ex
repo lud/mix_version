@@ -73,10 +73,10 @@ defmodule Mix.Tasks.Version do
     token = MixVersion.Token.new(current_vsn(), opts)
 
     stages = [
-      MixVersion.Stage.GetNextVsn,
       MixVersion.Stage.DetectGitCommand,
       MixVersion.Stage.FindGitRepo,
       MixVersion.Stage.CheckUnstaged,
+      MixVersion.Stage.GetNextVsn,
       MixVersion.Stage.CheckGitTag,
       MixVersion.Stage.UpdateMixfile,
       MixVersion.Stage.CommitChanges,
