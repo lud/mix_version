@@ -27,6 +27,11 @@ defmodule Mix.Tasks.Version do
 
     {opts, _args} =
       command(__MODULE__)
+      |> option(:info, :boolean,
+        alias: :i,
+        doc: "Only outputs the current version and stops. Ignores all other options.",
+        default: false
+      )
       |> option(:major, :boolean,
         alias: :M,
         doc: "Bump to a new major version.",
@@ -73,6 +78,7 @@ defmodule Mix.Tasks.Version do
     token = MixVersion.Token.new(current_vsn(), opts)
 
     stages = [
+      MixVersion.Stage.PrintAndStop,
       MixVersion.Stage.DetectGitCommand,
       MixVersion.Stage.FindGitRepo,
       MixVersion.Stage.CheckUnstaged,
