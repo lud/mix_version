@@ -7,16 +7,22 @@ defmodule MixVersion.Stage.GetNextVsn do
 
   def applies?(_), do: true
 
-  def run(%{current_vsn: current_vsn} = token) do
+  def run(%{current_vsn: current_vsn, opts: %{tag_current: false}} = token) do
     MixVersion.Cli.print("Current version: #{current_vsn}")
     current = Version.parse!(current_vsn)
 
     with {:ok, next} <- get_next(current, token.opts),
          vsn = String.Chars.Version.to_string(next),
-         print_next(vsn, token.opts),
+         print_next(vsn),
          :ok <- diff_versions(current, next) do
       {:ok, MixVersion.Token.put_next_vsn(token, vsn)}
     end
+  end
+
+  def run(%{current_vsn: current_vsn, opts: %{tag_current: true}} = token) do
+    MixVersion.Cli.print("Current version: #{current_vsn}")
+    print_next(current_vsn)
+    {:ok, MixVersion.Token.put_next_vsn(token, current_vsn)}
   end
 
   defp get_next(current_vsn, %{patch: true}), do: {:ok, bump(current_vsn, :patch)}
@@ -33,8 +39,10 @@ defmodule MixVersion.Stage.GetNextVsn do
     |> String.trim()
   end
 
-  defp print_next(vsn, _) do
-    unless Process.get(:has_prompted_for_new_vsn, false) do
+  defp print_next(vsn) do
+    if Process.get(:has_prompted_for_new_vsn, false) do
+      # no print as user input is shown
+    else
       MixVersion.Cli.print("New version:     #{vsn}")
     end
   end

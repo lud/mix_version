@@ -7,6 +7,7 @@ defmodule MixVersion.Stage.PrintAndStop do
 
   def applies?(%Token{opts: %{info: info}}), do: !!info
 
+  @spec run(Token.t()) :: no_return()
   def run(%Token{current_vsn: vsn}) do
     IO.puts(vsn)
     System.halt()

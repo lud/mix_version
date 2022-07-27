@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.3] - 2022-07-27
+### Added
+- The new `--tag-current` option (with short `-k`) allows simply tag the current
+  version specified in `mix.exs` without changing it.
+
 ## [2.0.0] - 2022-04-19
 ### Changed
 - The order of events has been modified in order to run all possible checks before any modification to the codebase or Git is made. This includes checking the Git tag availability and unstaged changes.
@@ -20,6 +25,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Versions set as module attributes in mix.exs can now be replaced
 
-[Unreleased]: https://github.com/lud/mix_version/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/lud/mix_version/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/lud/mix_version/compare/v2.0.0...v2.0.3
 [2.0.0]: https://github.com/lud/mix_version/compare/v1.3.0...v2.0.0
 [1.3.0]: https://github.com/lud/mix_version/compare/v1.2.0...v1.3.0
