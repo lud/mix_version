@@ -30,9 +30,7 @@ defmodule MixVersion.Stage.CheckUnstaged do
     else
       print_unstaged(unstaged_files)
 
-      question = "Do you wish to continue with the new version commit and tag?"
-
-      if Mix.Shell.IO.yes?(question) do
+      if Mix.Shell.IO.yes?("Commit and tag as-is?") do
         {:ok, token}
       else
         {:stop, "cancelled"}
@@ -42,13 +40,14 @@ defmodule MixVersion.Stage.CheckUnstaged do
 
   defp print_unstaged(unstaged_files) do
     MixVersion.Cli.warn([
-      "This command creates a new git commit.",
+      "A new commit with the current staged files will be created.",
       ?\n,
       "The following files have changes that are not staged to git " <>
         "and will not be included in that commit:\n",
       Enum.map(unstaged_files, &["– ", &1, ?\n]),
       ?\n,
-      "You may add the files to the Git index from another terminal before moving on.",
+      "Note that you may add the files to the Git index from another terminal " <>
+        "before moving on. All changes to Git will be included in the commit.",
       ?\n
     ])
   end

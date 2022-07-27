@@ -68,6 +68,10 @@ defmodule Mix.Tasks.Version do
         alias: :x,
         doc: "Define the tag prefix."
       )
+      |> option(:current, :boolean,
+        alias: :k,
+        doc: "Commit and tag with the current version."
+      )
       |> parse(argv)
 
     opts =
