@@ -70,6 +70,7 @@ defmodule Mix.Tasks.Version do
       )
       |> option(:tag_current, :boolean,
         alias: :k,
+        default: false,
         doc: "Commit and tag with the current version."
       )
       |> parse(argv)
@@ -156,12 +157,13 @@ defmodule Mix.Tasks.Version do
     Map.merge(project_config, cli_opts)
   end
 
-  defp check_mutex_opts(%{patch: p, minor: m, major: ma, new_version: n} = opts) do
-    case {p, m, ma, n} do
-      {true, false, false, nil} -> :ok
-      {false, true, false, nil} -> :ok
-      {false, false, true, nil} -> :ok
-      {false, false, false, _} -> :ok
+  defp check_mutex_opts(%{patch: p, minor: m, major: ma, new_version: n, tag_current: c} = opts) do
+    case {p, m, ma, n, c} do
+      {true, false, false, nil, false} -> :ok
+      {false, true, false, nil, false} -> :ok
+      {false, false, true, nil, false} -> :ok
+      {false, false, false, nil, true} -> :ok
+      {false, false, false, _, false} -> :ok
       _ -> :error
     end
     |> case do
@@ -169,7 +171,9 @@ defmodule Mix.Tasks.Version do
         opts
 
       :error ->
-        abort("Options --patch, --minor, --major and --new-version are mutually exclusive")
+        abort(
+          "Options --patch, --minor, --major, --new-version and --tag-current are mutually exclusive"
+        )
     end
   end
 end
