@@ -23,8 +23,6 @@ defmodule Mix.Tasks.Version do
 
   @doc false
   def run(argv) do
-    Mix.Task.run("app.config")
-
     {opts, _args} =
       command(__MODULE__)
       |> option(:info, :boolean,
