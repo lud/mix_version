@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.6] - 2023-08-31
+### Added
+- Defaults to No when confirming new version with unstaged changes
+
 ## [2.0.4] - 2022-07-27
 ### Fixed
 - Fixed bug with --tag-current not having a default value.
@@ -29,7 +33,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Versions set as module attributes in mix.exs can now be replaced
 
-[Unreleased]: https://github.com/lud/mix_version/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/lud/mix_version/compare/v2.0.5...HEAD
+[2.0.6]: https://github.com/lud/mix_version/compare/v2.0.4...v2.0.6
 [2.0.4]: https://github.com/lud/mix_version/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/lud/mix_version/compare/v2.0.0...v2.0.3
 [2.0.0]: https://github.com/lud/mix_version/compare/v1.3.0...v2.0.0
