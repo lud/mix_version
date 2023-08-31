@@ -30,7 +30,7 @@ defmodule MixVersion.Stage.CheckUnstaged do
     else
       print_unstaged(unstaged_files)
 
-      if Mix.Shell.IO.yes?("Commit and tag as-is?") do
+      if Mix.Shell.IO.yes?("Commit and tag as-is?", default: :no) do
         {:ok, token}
       else
         {:stop, "cancelled"}
