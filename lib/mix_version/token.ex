@@ -5,13 +5,26 @@ defmodule MixVersion.Token do
   """
 
   @enforce_keys [:opts, :git_cmd?, :git_repo, :current_vsn]
-  @defaults [opts: nil, git_cmd?: false, git_repo: nil, current_vsn: nil, next_vsn: nil]
+  @defaults [
+    opts: nil,
+    git_cmd?: false,
+    git_repo: nil,
+    current_vsn: nil,
+    next_vsn: nil,
+    hooks: %{}
+  ]
   defstruct @defaults
 
   @type t :: %__MODULE__{}
 
-  def new(current_vsn, opts) do
-    struct!(__MODULE__, current_vsn: current_vsn, opts: opts, git_cmd?: false, git_repo: nil)
+  def new(current_vsn, opts, hooks) do
+    struct!(__MODULE__,
+      current_vsn: current_vsn,
+      opts: opts,
+      git_cmd?: false,
+      git_repo: nil,
+      hooks: hooks
+    )
   end
 
   @defaults

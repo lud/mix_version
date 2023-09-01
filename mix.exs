@@ -27,7 +27,8 @@ defmodule MixVersion.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:cli_mate, "~> 0.1.1", runtime: false}
     ]
   end
 
@@ -41,14 +42,25 @@ defmodule MixVersion.MixProject do
     [
       mount: [
         {MixVersion, "lib/mix_version"},
-        {Mix.Tasks, {:mix_task, "lib/mix/tasks"}}
+        {Mix.Tasks, "lib/mix/tasks", flavor: :mix_task}
       ]
     ]
   end
 
   defp versioning do
     [
-      annotate: true
+      annotate: true,
+      before_commit: [
+        fn vsn ->
+          case System.cmd("git", ["cliff", "--tag", vsn, "-o", "CHANGELOG.md"],
+                 stderr_to_stdout: true
+               ) do
+            {_, 0} -> IO.puts("Updated CHANGELOG.md with #{vsn}")
+            {out, _} -> {:error, "Could not update CHANGELOG.md:\n\n #{out}"}
+          end
+        end,
+        add: "CHANGELOG.md"
+      ]
     ]
   end
 

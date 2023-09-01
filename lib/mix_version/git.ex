@@ -68,20 +68,32 @@ defmodule MixVersion.Git do
     end
   end
 
-  def relative_path!(%Repo{root: root} = repo, path) do
+  defp relative_path!(%Repo{root: root} = repo, path) do
     case relative_path(repo, path) do
       {:ok, rel} -> rel
       {:error, _} -> raise "Could not figure out relative path from #{root} for #{path}"
     end
   end
 
-  def relative_path(%Repo{root: root}, root),
+  defp relative_path(%Repo{root: root}, root),
     do: {:ok, "."}
 
-  def relative_path(%Repo{root: root}, path) do
-    case Path.relative_to(path, root) do
-      ^path -> {:error, :external_path}
-      rel -> {:ok, rel}
+  defp relative_path(%Repo{root: root}, path) do
+    case Path.type(path) do
+      :absolute ->
+        case Path.relative_to(path, root) do
+          ^path -> {:error, {:external_path, path}}
+          rel -> {:ok, rel}
+        end
+
+      :relative ->
+        abs = Path.join(root, path)
+
+        if File.exists?(abs) do
+          {:ok, path}
+        else
+          {:error, {:no_such_file, path}}
+        end
     end
   end
 

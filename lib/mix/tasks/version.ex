@@ -1,4 +1,6 @@
 defmodule Mix.Tasks.Version do
+  alias MixVersion.CLI
+  import MixVersion.Config
   use Mix.Task
 
   @readme File.cwd!()
@@ -9,76 +11,73 @@ defmodule Mix.Tasks.Version do
           |> String.split("<!-- doc-end -->")
           |> hd()
 
+  @command [
+    module: __MODULE__,
+    options: [
+      info: [
+        type: :boolean,
+        short: :i,
+        doc: "Only outputs the current version and stops. Ignores all other options.",
+        default: false
+      ],
+      major: [type: :boolean, short: :M, doc: "Bump to a new major version.", default: false],
+      minor: [type: :boolean, short: :m, doc: "Bump to a new minor version.", default: false],
+      patch: [type: :boolean, short: :p, doc: "Bump the patch version.", default: false],
+      new_version: [type: :string, short: :n, doc: "Set the new version number.", default: nil],
+      annotate: [type: :boolean, short: :a, doc: "Create an annotated git tag."],
+      commit_msg: [
+        type: :string,
+        short: :c,
+        doc: "Define the commit message, with all '%s' replaced by the new VSN."
+      ],
+      annotation: [
+        type: :string,
+        short: :A,
+        doc: "Define the tag annotation message, with all '%s' replaced by the new VSN."
+      ],
+      tag_prefix: [type: :string, short: :x, doc: "Define the tag prefix."],
+      tag_current: [
+        type: :boolean,
+        short: :k,
+        default: false,
+        doc: "Commit and tag with the current version."
+      ]
+    ]
+  ]
+
+  @usage CLI.format_usage(@command, format: :moduledoc)
   @moduledoc """
   This module implements a mix task whose main purpose is to update the version
   number of an Elixir application, with extra steps such as committing a git
   tag.
 
   #{@readme}
+
+  #{@usage}
   """
 
   @shortdoc "Manages the version of an Elixir application"
 
-  import MixVersion.Cli
-
   @doc false
   def run(argv) do
-    {opts, _args} =
-      command(__MODULE__)
-      |> option(:info, :boolean,
-        alias: :i,
-        doc: "Only outputs the current version and stops. Ignores all other options.",
-        default: false
+    command =
+      CLI.parse_or_halt!(
+        argv,
+        @command
       )
-      |> option(:major, :boolean,
-        alias: :M,
-        doc: "Bump to a new major version.",
-        default: false
-      )
-      |> option(:minor, :boolean,
-        alias: :m,
-        doc: "Bump to a new minor version.",
-        default: false
-      )
-      |> option(:patch, :boolean,
-        alias: :p,
-        doc: "Bump the patch version.",
-        default: false
-      )
-      |> option(:new_version, :string,
-        alias: :n,
-        doc: "Set the new version number.",
-        default: nil
-      )
-      |> option(:annotate, :boolean,
-        alias: :a,
-        doc: "Create an annotated git tag."
-      )
-      |> option(:commit_msg, :string,
-        alias: :c,
-        doc: "Define the commit message, with all '%s' replaced by the new VSN."
-      )
-      |> option(:annotation, :string,
-        alias: :A,
-        doc: "Define the tag annotation message, with all '%s' replaced by the new VSN."
-      )
-      |> option(:tag_prefix, :string,
-        alias: :x,
-        doc: "Define the tag prefix."
-      )
-      |> option(:tag_current, :boolean,
-        alias: :k,
-        default: false,
-        doc: "Commit and tag with the current version."
-      )
-      |> parse(argv)
+
+    %{options: opts} = command
 
     opts =
       opts
       |> defaults_from_project()
       |> check_mutex_opts()
 
-    token = MixVersion.Token.new(current_vsn(), opts)
+    hooks =
+      collect_hooks()
+      |> dbg()
+
+    token = MixVersion.Token.new(current_vsn(), opts, hooks)
 
     stages = [
       MixVersion.Stage.PrintAndStop,
@@ -88,6 +87,7 @@ defmodule Mix.Tasks.Version do
       MixVersion.Stage.GetNextVsn,
       MixVersion.Stage.CheckGitTag,
       MixVersion.Stage.UpdateMixfile,
+      {MixVersion.Stage.ApplyHook, [:before_commit]},
       MixVersion.Stage.CommitChanges,
       MixVersion.Stage.TagGitHead
     ]
@@ -107,18 +107,22 @@ defmodule Mix.Tasks.Version do
           token
 
         {:error, reason} ->
-          reason |> to_iodata() |> abort()
+          reason |> to_iodata() |> CLI.halt_error()
 
         {:stop, reason} ->
-          reason |> to_iodata() |> warn()
-          abort()
+          reason |> to_iodata() |> CLI.warn()
+          CLI.halt()
       end
     end)
   end
 
-  defp run_stage(stage, token) do
-    if stage.applies?(token) do
-      stage.run(token)
+  defp run_stage(stage, token) when is_atom(stage) do
+    run_stage({stage, []}, token)
+  end
+
+  defp run_stage({module, args}, token) when is_list(args) do
+    if module.applies?(token) do
+      apply(module, :run, [token | args])
     else
       {:ok, token}
     end
@@ -138,7 +142,6 @@ defmodule Mix.Tasks.Version do
                     tag_prefix: "v"
 
   defp defaults_from_project(cli_opts) do
-    import MixVersion.Config
     project = current_project()
 
     project_config =
@@ -155,6 +158,18 @@ defmodule Mix.Tasks.Version do
     Map.merge(project_config, cli_opts)
   end
 
+  defp collect_hooks do
+    project = current_project()
+
+    keys = [:before_commit]
+
+    Map.new(keys, fn k ->
+      value = project_get(project, [:versioning, k], [])
+
+      {k, value}
+    end)
+  end
+
   defp check_mutex_opts(%{patch: p, minor: m, major: ma, new_version: n, tag_current: c} = opts) do
     case {p, m, ma, n, c} do
       {true, false, false, nil, false} -> :ok
@@ -169,7 +184,7 @@ defmodule Mix.Tasks.Version do
         opts
 
       :error ->
-        abort(
+        CLI.halt_error(
           "Options --patch, --minor, --major, --new-version and --tag-current are mutually exclusive"
         )
     end

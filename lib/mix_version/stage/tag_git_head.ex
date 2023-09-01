@@ -20,7 +20,7 @@ defmodule MixVersion.Stage.TagGitHead do
     ]
 
     with :ok <- MixVersion.Git.tag(token.git_repo, tag_name, tag_opts) do
-      MixVersion.Cli.print("created tag #{tag_name}")
+      MixVersion.CLI.print("created tag #{tag_name}")
       {:ok, token}
     end
   end
