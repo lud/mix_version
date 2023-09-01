@@ -2,11 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.7] - 2023-09-01
+## [2.1.0] - 2023-09-01
 
-### Miscellaneous Tasks
+### Bug Fixes
 
-- Upgraded the CLI using :cli_mate
+- Usage of CliMate in various stages
+
+### Features
+
+- Added support of before commit hook
 
 ## [2.0.6] - 2023-08-31
 
