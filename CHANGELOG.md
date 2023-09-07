@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.1.2] - 2023-09-07
+## [2.1.1] - 2023-09-07
+
+### Features
+
+- Files added to Git during before_commit hook are printed to stdout
 
 ### Miscellaneous Tasks
 
