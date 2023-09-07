@@ -73,9 +73,7 @@ defmodule Mix.Tasks.Version do
       |> defaults_from_project()
       |> check_mutex_opts()
 
-    hooks =
-      collect_hooks()
-      |> dbg()
+    hooks = collect_hooks()
 
     token = MixVersion.Token.new(current_vsn(), opts, hooks)
 

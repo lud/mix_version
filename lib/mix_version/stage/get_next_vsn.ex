@@ -75,7 +75,7 @@ defmodule MixVersion.Stage.GetNextVsn do
   end
 
   defp confirm_downgrade do
-    q? = IO.ANSI.format(MixVersion.CLI.color(:yellow, "Confirm downgrade?")) |> dbg()
+    q? = IO.ANSI.format(MixVersion.CLI.color(:yellow, "Confirm downgrade?"))
 
     if Mix.Shell.IO.yes?(:erlang.iolist_to_binary(q?), default: :no),
       do: :ok,
