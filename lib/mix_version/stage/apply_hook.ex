@@ -50,6 +50,7 @@ defmodule MixVersion.Stage.ApplyHook do
 
   defp apply_hook({:add, path}, token) when is_binary(path) do
     with :ok <- MixVersion.Git.add(token.git_repo, path) do
+      MixVersion.CLI.writeln("Staged #{path} to Git index")
       {:ok, token}
     end
   end

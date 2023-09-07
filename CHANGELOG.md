@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2023-09-07
+
+### Miscellaneous Tasks
+
+- Remove useless debug prints
+
 ## [2.1.0] - 2023-09-01
 
 ### Bug Fixes
