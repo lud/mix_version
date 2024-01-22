@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2024-01-22
+
+### Features
+
+- Mixfile is now updated only when hooks succeeded
+
 ## [2.1.1] - 2023-09-07
 
 ### Features
