@@ -14,7 +14,7 @@ defmodule MixVersion.Stage.UpdateMixfile do
     with {:ok, content} <- File.read(path),
          {:ok, new_content} <- swap_mixfile_version(token, content),
          :ok <- File.write(path, new_content),
-         MixVersion.CLI.writeln("Wrote mixfile:   #{path}"),
+         MixVersion.CLI.writeln("Updated mixfile: #{path}"),
          :ok <- maybe_git_add_mixfile(path, token) do
       {:ok, token}
     else

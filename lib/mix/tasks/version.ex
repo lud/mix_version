@@ -84,8 +84,8 @@ defmodule Mix.Tasks.Version do
       MixVersion.Stage.CheckUnstaged,
       MixVersion.Stage.GetNextVsn,
       MixVersion.Stage.CheckGitTag,
-      MixVersion.Stage.UpdateMixfile,
       {MixVersion.Stage.ApplyHook, [:before_commit]},
+      MixVersion.Stage.UpdateMixfile,
       MixVersion.Stage.CommitChanges,
       MixVersion.Stage.TagGitHead
     ]

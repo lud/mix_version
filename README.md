@@ -145,13 +145,3 @@ Bump major:
 ```
 
 <!-- doc-end -->
-
-## TODO
-
-This list contains wanted features
-
-* [ ] Hooks to run system commands such as `chan release` during the version
-  upgrade.
-* [ ] Git helpers instead of system commands, such as `git_add: "CHANGELOG.md"`.
-* [ ] Subcommands or flags to just print the current or next VSN.
-* [ ] `-t` flag to just tag with the _current_ VSN.
