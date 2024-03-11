@@ -28,7 +28,7 @@ defmodule MixVersion.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:cli_mate, "~> 0.1.1", runtime: false}
+      {:cli_mate, "~> 0.3", runtime: false}
     ]
   end
 
