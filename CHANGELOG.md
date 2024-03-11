@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - 2024-03-11
+
+### Bug Fixes
+
+- Fixed --anotate that would always default to false (upgrade of cli_mate)
+
 ## [2.2.0] - 2024-01-22
 
 ### Features
