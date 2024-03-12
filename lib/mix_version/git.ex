@@ -127,15 +127,14 @@ defmodule MixVersion.Git do
   end
 
   def tag(%Repo{} = repo, name, opts) do
-    args =
-      if Keyword.get(opts, :annotate, false) do
-        ["tag", name, "-a", "-m", Keyword.fetch!(opts, :annotation)]
-      else
-        ["tag", name]
-      end
+    message = Keyword.fetch!(opts, :annotation)
+    args = ["tag", name, "-m", message]
 
-    with {:ok, _} <- git(repo, args) do
-      :ok
-    end
+    args =
+      if Keyword.get(opts, :annotate, false),
+        do: args ++ ["-a"],
+        else: args
+
+    with {:ok, _} <- git(repo, args), do: :ok
   end
 end

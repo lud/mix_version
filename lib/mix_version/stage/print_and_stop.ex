@@ -1,6 +1,6 @@
 defmodule MixVersion.Stage.PrintAndStop do
   @moduledoc """
-  This stage checks for the output command and prints the version and exists if
+  This stage checks for the output command and prints the version and exits if
   the flag is provided.
   """
   alias MixVersion.Token
