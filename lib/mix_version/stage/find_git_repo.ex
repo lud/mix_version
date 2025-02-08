@@ -5,7 +5,7 @@ defmodule MixVersion.Stage.FindGitRepo do
 
   @behaviour MixVersion.Stage
 
-  def applies?(%{git_cmd?: has_git}), do: has_git
+  def applies?(%{git_cmd?: has_git?}), do: has_git?
 
   def run(token) do
     case MixVersion.Git.get_repo(File.cwd!()) do

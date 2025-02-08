@@ -7,12 +7,13 @@ run:
 install: reinstall
 
 reinstall: uninstall
-    mix deps.get
-    mix archive.install --force
+    mix deps.get --only prod
+    MIX_ENV=prod mix compile --force
+    MIX_ENV=prod mix escript.build
+    MIX_ENV=prod mix escript.install _build/escript/xvsn --force
 
 uninstall:
-    rm -vf *ez
-    mix archive.uninstall mix_version --force
+    mix escript.uninstall _build/escript/xvsn --force
 
 docs:
   rm -rf _build/dev/lib/mix_version

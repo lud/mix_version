@@ -4,12 +4,13 @@ defmodule MixVersion.MixProject do
   def project do
     [
       app: :mix_version,
-      version: "2.2.1",
+      version: "2.3.0",
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      escript: escript(),
       docs: docs(),
       modkit: modkit(),
       versioning: versioning(),
@@ -20,7 +21,16 @@ defmodule MixVersion.MixProject do
 
   def application do
     [
-      extra_applications: []
+      extra_applications: [:mix]
+    ]
+  end
+
+  defp escript do
+    [
+      main_module: MixVersion.Main,
+      name: :xvsn,
+      embed_elixir: true,
+      path: "_build/escript/xvsn"
     ]
   end
 
