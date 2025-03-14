@@ -15,7 +15,8 @@ defmodule MixVersion.MixProject do
       modkit: modkit(),
       versioning: versioning(),
       package: package(),
-      source_url: "https://github.com/lud/mix_version"
+      source_url: "https://github.com/lud/mix_version",
+      dialyzer: dialyzer()
     ]
   end
 
@@ -36,9 +37,16 @@ defmodule MixVersion.MixProject do
 
   defp deps do
     [
+      {:cli_mate, "~> 0.3", runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:cli_mate, "~> 0.3", runtime: false}
+      {:dialyxir, "~> 1.4", only: :test, runtime: false}
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [dialyzer: :test]
     ]
   end
 
@@ -82,6 +90,16 @@ defmodule MixVersion.MixProject do
         "Installation" => "https://github.com/lud/mix_version#installation",
         "Changelog" => "https://github.com/lud/mix_version/blob/master/CHANGELOG.md"
       }
+    ]
+  end
+
+  defp dialyzer do
+    [
+      flags: [:unmatched_returns, :error_handling, :unknown, :extra_return],
+      list_unused_filters: true,
+      plt_add_deps: :app_tree,
+      plt_add_apps: [:ex_unit, :mix],
+      plt_local_path: "_build/plts"
     ]
   end
 end
