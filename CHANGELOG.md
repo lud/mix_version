@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [2.4.0] - 2025-03-25
 
 ### 🚀 Features
 
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### ⚙️ Miscellaneous Tasks
 
 - Added dialyzer and mix_audit
+- Removed git-cliff config
 
 ## [2.2.1] - 2024-03-11
 
