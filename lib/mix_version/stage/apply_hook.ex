@@ -17,7 +17,7 @@ defmodule MixVersion.Stage.ApplyHook do
         err
 
       {:invalid, other} ->
-        MixVersion.CLI.halt_error(
+        CliMate.CLI.halt_error(
           "Hook #{inspect(key)} returned invalid result, expected :ok or {:error, binary}, got: #{inspect(other)}"
         )
     end
@@ -50,7 +50,7 @@ defmodule MixVersion.Stage.ApplyHook do
 
   defp apply_hook({:add, path}, token) when is_binary(path) do
     with :ok <- MixVersion.Git.add(token.git_repo, path) do
-      MixVersion.CLI.writeln("Staged #{path} to Git index")
+      CliMate.CLI.writeln("Staged #{path} to Git index")
       {:ok, token}
     end
   end

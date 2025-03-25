@@ -1,7 +1,28 @@
 defmodule MixVersion.Main do
   def main(argv) do
+    Mix.start()
     load_dot_config()
     load_mix_exs()
+    project = Mix.Project.get()
+    __MODULE__.module_info()
+
+    Application.loaded_applications() |> dbg(limit: :infinity)
+    Mix.Task.run("app.config")
+    Application.loaded_applications() |> dbg(limit: :infinity)
+
+    :code.ensure_modules_loaded(Application.spec(:mix_version, :modules))
+    {:ok, modules} = :application.get_key(:mix_version, :modules)
+
+    Enum.each(modules, fn mod ->
+      Code.ensure_loaded?(mod) |> IO.inspect(limit: :infinity, label: mod)
+    end)
+
+    {:ok, modules} = :application.get_key(Mix.Project.get().project()[:app], :modules)
+
+    Enum.each(modules, fn mod ->
+      Code.ensure_loaded?(mod) |> IO.inspect(limit: :infinity, label: mod)
+    end)
+
     Mix.Tasks.Version.run(argv)
   end
 

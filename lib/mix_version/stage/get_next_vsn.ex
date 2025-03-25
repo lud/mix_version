@@ -8,7 +8,7 @@ defmodule MixVersion.Stage.GetNextVsn do
   def applies?(_), do: true
 
   def run(%{current_vsn: current_vsn, opts: %{tag_current: false}} = token) do
-    MixVersion.CLI.writeln("Current version: #{current_vsn}")
+    CliMate.CLI.writeln("Current version: #{current_vsn}")
     current = Version.parse!(current_vsn)
 
     with {:ok, next} <- get_next(current, token.opts),
@@ -20,7 +20,7 @@ defmodule MixVersion.Stage.GetNextVsn do
   end
 
   def run(%{current_vsn: current_vsn, opts: %{tag_current: true}} = token) do
-    MixVersion.CLI.writeln("Current version: #{current_vsn}")
+    CliMate.CLI.writeln("Current version: #{current_vsn}")
     print_next(current_vsn)
     {:ok, MixVersion.Token.put_next_vsn(token, current_vsn)}
   end
@@ -43,7 +43,7 @@ defmodule MixVersion.Stage.GetNextVsn do
     if Process.get(:has_prompted_for_new_vsn, false) do
       # no print as user input is shown
     else
-      MixVersion.CLI.writeln("New version:     #{vsn}")
+      CliMate.CLI.writeln("New version:     #{vsn}")
     end
   end
 
@@ -75,7 +75,7 @@ defmodule MixVersion.Stage.GetNextVsn do
   end
 
   defp confirm_downgrade do
-    q? = IO.ANSI.format(MixVersion.CLI.color(:yellow, "Confirm downgrade?"))
+    q? = IO.ANSI.format(CliMate.CLI.color(:yellow, "Confirm downgrade?"))
 
     if Mix.Shell.IO.yes?(:erlang.iolist_to_binary(q?), default: :no),
       do: :ok,

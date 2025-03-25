@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Version do
-  alias MixVersion.CLI
+  alias CliMate.CLI
   import MixVersion.Config
   use Mix.Task
 

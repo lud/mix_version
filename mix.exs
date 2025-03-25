@@ -22,7 +22,7 @@ defmodule MixVersion.MixProject do
 
   def application do
     [
-      extra_applications: [:mix]
+      extra_applications: [:mix, :logger]
     ]
   end
 

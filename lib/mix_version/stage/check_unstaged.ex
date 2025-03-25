@@ -39,7 +39,7 @@ defmodule MixVersion.Stage.CheckUnstaged do
   end
 
   defp print_unstaged(unstaged_files) do
-    MixVersion.CLI.warn([
+    CliMate.CLI.warn([
       "A new commit with the current staged files will be created.",
       ?\n,
       "The following files have changes that are not staged to git " <>

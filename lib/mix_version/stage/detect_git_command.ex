@@ -11,8 +11,8 @@ defmodule MixVersion.Stage.DetectGitCommand do
     git? = MixVersion.Git.installed?()
 
     case git? do
-      true -> MixVersion.CLI.debug("git command found")
-      false -> MixVersion.CLI.warn("git command not found")
+      true -> CliMate.CLI.debug("git command found")
+      false -> CliMate.CLI.warn("git command not found")
     end
 
     {:ok, MixVersion.Token.put_git_cmd?(token, git?)}

@@ -13,7 +13,7 @@ reinstall: uninstall
     MIX_ENV=prod mix escript.install _build/escript/xvsn --force
 
 uninstall:
-    mix escript.uninstall _build/escript/xvsn --force
+    mix escript.uninstall xvsn --force
 
 docs:
   rm -rf _build/dev/lib/mix_version

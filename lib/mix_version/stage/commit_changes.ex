@@ -13,7 +13,7 @@ defmodule MixVersion.Stage.CommitChanges do
     commit_msg = String.replace(commit_msg_tpl, "%s", token.next_vsn)
 
     with :ok <- MixVersion.Git.commit(token.git_repo, commit_msg) do
-      MixVersion.CLI.debug("committed changes to git")
+      CliMate.CLI.debug("committed changes to git")
       {:ok, token}
     end
   end
