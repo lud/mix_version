@@ -11,6 +11,8 @@ defmodule Mix.Tasks.Version do
           |> String.split("<!-- doc-end -->")
           |> hd()
 
+  @requirements ["app.config"]
+
   @command [
     module: __MODULE__,
     options: [
