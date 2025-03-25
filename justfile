@@ -1,20 +1,24 @@
-default:
-  just --choose
+deps:
+  mix deps.get
 
-run:
-    mix mod.relocate
+test:
+  mix test
 
-install: reinstall
+lint:
+  mix compile --force --warnings-as-errors
+  mix credo
 
-reinstall: uninstall
-    mix deps.get
-    mix archive.install --force
+dialyzer:
+  mix dialyzer
 
-uninstall:
-    rm -vf *ez
-    mix archive.uninstall mix_version --force
+_mix_format:
+  mix format
 
-docs:
-  rm -rf _build/dev/lib/mix_version
-  mix docs
+_mix_check:
+  mix check
+
+_git_status:
+  git status
+
+check: deps _mix_format _mix_check _git_status
 

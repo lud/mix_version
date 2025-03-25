@@ -1,6 +1,6 @@
 # mix version
 
-<!-- doc-start -->
+
 
 This is a simple tool to automatically update the version number of an Elixir
 project in the `mix.exs`, commit the change and create and create a git tag
@@ -49,6 +49,8 @@ were implemented:
 * Any unchecked change to the `mix.exs` file will prevent the tool to run.
 * The `:annotate` option is now `true` by default, creating annotated tags.
 
+
+<!-- doc-start -->
 
 ## Configuration
 
