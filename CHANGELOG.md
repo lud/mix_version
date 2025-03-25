@@ -2,41 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### 🚀 Features
+
+- [**breaking**] Removed support for installing as an archive
+
+### 🐛 Bug Fixes
+
+- Load app.config to support using libraries from hooks
+
+### ⚙️ Miscellaneous Tasks
+
+- Added dialyzer and mix_audit
+
 ## [2.2.1] - 2024-03-11
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
 - Fixed --anotate that would always default to false (upgrade of cli_mate)
 
 ## [2.2.0] - 2024-01-22
 
-### Features
+### 🚀 Features
 
 - Mixfile is now updated only when hooks succeeded
 
 ## [2.1.1] - 2023-09-07
 
-### Features
+### 🚀 Features
 
 - Files added to Git during before_commit hook are printed to stdout
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
 - Remove useless debug prints
 
 ## [2.1.0] - 2023-09-01
 
-### Bug Fixes
-
-- Usage of CliMate in various stages
-
-### Features
+### 🚀 Features
 
 - Added support of before commit hook
 
+### 🐛 Bug Fixes
+
+- Usage of CliMate in various stages
+
 ## [2.0.6] - 2023-08-31
 
-### Features
+### 🚀 Features
 
 - Default to false when asking to confirm new version with unstaged changes
 
