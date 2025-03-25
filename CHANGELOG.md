@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] - 2025-03-25
+
+### Bug Fixes
+
+- Load app.config to support using libraries from hooks
+
+### Miscellaneous Tasks
+
+- Support branch with fixed cli_mate 0.6
+
 ## [2.2.1] - 2024-03-11
 
 ### Bug Fixes
