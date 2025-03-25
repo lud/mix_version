@@ -29,6 +29,13 @@ def deps do
 end
 ```
 
+If you still want to install globally, you can do so by using the support
+branch:
+
+```bash
+mix archive.install hex mix_version 2.3.2
+```
+
 
 ## Breaking changes in version 2
 
