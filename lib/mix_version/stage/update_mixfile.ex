@@ -30,18 +30,20 @@ defmodule MixVersion.Stage.UpdateMixfile do
       {~r/(?<=\s)@version\s+"#{token.current_vsn}"/, "@version \"#{token.next_vsn}\""}
     ]
 
-    for {regex, replacement} <- replace_schemes, reduce: :error do
-      :error ->
-        if Regex.match?(regex, content) do
-          {:ok, String.replace(content, regex, replacement)}
-        else
-          :error
-        end
+    mixfile_result =
+      for {regex, replacement} <- replace_schemes, reduce: :error do
+        :error ->
+          if Regex.match?(regex, content) do
+            {:ok, String.replace(content, regex, replacement)}
+          else
+            :error
+          end
 
-      {:ok, _content} = ok ->
-        ok
-    end
-    |> case do
+        {:ok, _content} = ok ->
+          ok
+      end
+
+    case mixfile_result do
       :error -> {:error, "Could not find version to replace in mixfile"}
       ok -> ok
     end

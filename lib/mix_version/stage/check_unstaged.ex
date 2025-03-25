@@ -23,7 +23,7 @@ defmodule MixVersion.Stage.CheckUnstaged do
   end
 
   defp check_unstaged(token, unstaged_files) do
-    mixfile = Mix.Project.project_file() |> MixVersion.Git.path_relative_to(token.git_repo)
+    mixfile = MixVersion.Git.path_relative_to(Mix.Project.project_file(), token.git_repo)
 
     if mixfile in unstaged_files do
       {:error, "file #{mixfile} has unstaged changes"}
