@@ -12,10 +12,21 @@ versatile solution.
 
 ## Installation
 
-Although this tool can be set as a dependency in you mix projects, is is rather intended to be used as a globally available command line tool.
+Since version `2.4` it is no more possible to install `mix_version` globally as
+an archive.
 
-```bash
-mix archive.install hex mix_version
+This is because the `cli_mate` dependency [no longer supports
+it]((https://github.com/lud/cli_mate?tab=readme-ov-file#migration-to-version-070)).
+
+We are working in a way to provide an escrip for mix version. In the meantime,
+it is now required to add `mix_version` as a regular dependency:
+
+```elixir
+def deps do
+  [
+    {:mix_version, "~> 2.4", only: [:dev, :test], runtime: false},
+  ]
+end
 ```
 
 
