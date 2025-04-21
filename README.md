@@ -118,6 +118,7 @@ annotation: "new version %s"
 tag_prefix: "v"
 ```
 
+<!-- doc-end -->
 
 ## Usage
 
@@ -135,33 +136,57 @@ Versions managed by Elixir follow the `MAJOR.MINOR.PATCH` scheme, with
 optionnaly a pre-release tag as in `1.0.0-rc2`.
 
 ```text
--M, --major        boolean. Bump to a new major version.
--m, --minor        boolean. Bump to a new minor version.
--p, --patch        boolean. Bump the patch version.
--a, --annotate     boolean. Create an annotated git tag.
--A, --annotation   string. Define the tag annotation message, with all '%s' replaced by the new VSN.
--c, --commit-msg   string. Define the commit message, with all '%s' replaced by the new VSN.
--n, --new-version  string. Set the new version number.
--x, --tag-prefix   string. Define the tag prefix.
+-i, --info
+      Only outputs the current version and stops. Ignores all other options.
+      Defaults to false.
 
+-M, --major
+      Bump to a new major version. Defaults to false.
+
+-m, --minor
+      Bump to a new minor version. Defaults to false.
+
+-p, --patch
+      Bump the patch version. Defaults to false.
+
+-n, --new-version <string>
+      Set the new version number. Defaults to nil.
+
+-a, --annotate
+      Create an annotated git tag.
+
+-c, --commit-msg <string>
+      Define the commit message, with all '%s' replaced by the new VSN.
+
+-A, --annotation <string>
+      Define the tag annotation message, with all '%s' replaced by the new VSN.
+
+-x, --tag-prefix <string>
+      Define the tag prefix.
+
+-k, --tag-current
+      Commit and tag with the current version. Defaults to false.
+
+    --help
+      Displays this help.
 ```
 
-When using the options to bump a part of the version, a pre-release tag will be
-dropped for a major or minor bump, whereas a patch bump will only remove this
-pre-release tag and keep the current patch number.
+When bumping a part of the version, pre-release tags are dropped. For a major or
+minor bump, the version number changes, but it remains the same with a patch
+bump..
 
 ```text
-Bump patch:
-  1.2.3-rc1  ->  1.2.3
-  1.2.3      ->  1.2.4
+Bump major:
+  1.2.3      ->  2.0.0
+  1.2.3-rc1  ->  2.0.0
 
 Bump minor:
-  1.2.3-rc1  ->  1.3.0
   1.2.3      ->  1.3.0
+  1.2.3-rc1  ->  1.3.0
 
-Bump major:
-  1.2.3-rc1  ->  2.0.0
-  1.2.3      ->  2.0.0
+Bump patch:
+  1.2.3      ->  1.2.4
+  1.2.3-rc1  ->  1.2.3  # Still 1.2.3
 ```
 
-<!-- doc-end -->
+
