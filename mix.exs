@@ -33,7 +33,7 @@ defmodule MixVersion.MixProject do
       # Dev, Test
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:ex_check, "~> 0.16.0", only: [:dev, :test]},
+      {:ex_check, "~> 0.16.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: :test, runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test]}
     ]
