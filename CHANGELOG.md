@@ -2,11 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [2.5.0-rc1] - 2025-05-06
 
 ### 🚀 Features
 
 - Embedded cli_mate generated code
+
+### 🐛 Bug Fixes
+
+- Always provide a message to git tags
 
 ### 📚 Documentation
 
@@ -19,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - Updated repository configuration (#5)
 - Update Elixir Github workflow (#6)
 - Git Cliff configuration
+- CLI docs
 
 ## [2.4.0] - 2025-03-25
 
