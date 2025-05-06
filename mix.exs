@@ -28,7 +28,7 @@ defmodule MixVersion.MixProject do
   defp deps do
     [
       # App
-      {:cli_mate, "~> 0.7", runtime: false},
+      {:cli_mate, "~> 0.8", only: [:dev], runtime: false},
 
       # Dev, Test
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -60,7 +60,7 @@ defmodule MixVersion.MixProject do
 
   defp versioning do
     [
-      annotate: true,
+      annotate: false,
       before_commit: [
         fn vsn ->
           case System.cmd("git", ["cliff", "--tag", vsn, "-o", "CHANGELOG.md"],

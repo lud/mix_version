@@ -1,17 +1,25 @@
 defmodule Mix.Tasks.Version do
-  alias CliMate.CLI
+  alias MixVersion.CLI
   import MixVersion.Config
   use Mix.Task
 
-  @readme File.cwd!()
-          |> Path.join("README.md")
-          |> File.read!()
-          |> String.split("<!-- doc-start -->")
-          |> Enum.at(1)
-          |> String.split("<!-- doc-end -->")
-          |> hd()
+  @readme "README.md"
+  @external_resource @readme
+  @readme_content @readme
+                  |> File.read!()
+                  |> String.split("<!-- doc-start -->")
+                  |> Enum.at(1)
+                  |> String.split("<!-- doc-end -->")
+                  |> hd()
 
-  @requirements ["app.config"]
+  @default_commit_msg "new version %s"
+  @default_annotation "new version %s"
+  @default_tag_prefix "v"
+  @default_annotate true
+
+  default_doc = fn key, fallback ->
+    "Defaults to`mix.exs[:versioning][#{inspect(key)}]` value if defined or otherwise `#{inspect(fallback)}`."
+  end
 
   @command [
     module: __MODULE__,
@@ -26,18 +34,34 @@ defmodule Mix.Tasks.Version do
       minor: [type: :boolean, short: :m, doc: "Bump to a new minor version.", default: false],
       patch: [type: :boolean, short: :p, doc: "Bump the patch version.", default: false],
       new_version: [type: :string, short: :n, doc: "Set the new version number.", default: nil],
-      annotate: [type: :boolean, short: :a, doc: "Create an annotated git tag."],
+      annotate: [
+        type: :boolean,
+        short: :a,
+        doc: "Create an annotated git tag.",
+        default: &__MODULE__.default_opt/1,
+        default_doc: default_doc.(:annotate, @default_annotate)
+      ],
       commit_msg: [
         type: :string,
         short: :c,
-        doc: "Define the commit message, with all '%s' replaced by the new VSN."
+        doc: "Define the commit message, with all '%s' replaced by the new VSN.",
+        default: &__MODULE__.default_opt/1,
+        default_doc: default_doc.(:commit_msg, @default_commit_msg)
       ],
       annotation: [
         type: :string,
         short: :A,
-        doc: "Define the tag annotation message, with all '%s' replaced by the new VSN."
+        doc: "Define the tag annotation message, with all '%s' replaced by the new VSN.",
+        default: &__MODULE__.default_opt/1,
+        default_doc: default_doc.(:annotation, @default_annotation)
       ],
-      tag_prefix: [type: :string, short: :x, doc: "Define the tag prefix."],
+      tag_prefix: [
+        type: :string,
+        short: :x,
+        doc: "Define the tag prefix.",
+        default: &__MODULE__.default_opt/1,
+        default_doc: default_doc.(:tag_prefix, @default_tag_prefix)
+      ],
       tag_current: [
         type: :boolean,
         short: :k,
@@ -47,13 +71,15 @@ defmodule Mix.Tasks.Version do
     ]
   ]
 
+  @requirements ["loadpaths"]
+
   @usage CLI.format_usage(@command, format: :moduledoc)
   @moduledoc """
   This module implements a mix task whose main purpose is to update the version
   number of an Elixir application, with extra steps such as committing a git
   tag.
 
-  #{@readme}
+  #{@readme_content}
 
   #{@usage}
   """
@@ -70,11 +96,7 @@ defmodule Mix.Tasks.Version do
 
     %{options: opts} = command
 
-    opts =
-      opts
-      |> defaults_from_project()
-      |> check_mutex_opts()
-
+    opts = check_mutex_opts(opts)
     hooks = collect_hooks()
 
     token = MixVersion.Token.new(current_vsn(), opts, hooks)
@@ -93,6 +115,20 @@ defmodule Mix.Tasks.Version do
     ]
 
     run_stages(stages, token)
+  end
+
+  def default_opt(:commit_msg), do: default_from_project(:commit_msg, @default_commit_msg)
+  def default_opt(:annotation), do: default_from_project(:annotation, @default_annotation)
+  def default_opt(:tag_prefix), do: default_from_project(:tag_prefix, @default_tag_prefix)
+  def default_opt(:annotate), do: default_from_project(:annotate, @default_annotate)
+
+  defp default_from_project(key, default_default) do
+    project = current_project()
+
+    case project_get(project, [:versioning, key], :__not_configured__) do
+      :__not_configured__ -> default_default
+      value -> value
+    end
   end
 
   defp current_vsn do
@@ -135,28 +171,6 @@ defmodule Mix.Tasks.Version do
   defp _to_iodata(reason) when is_integer(reason), do: reason
   defp _to_iodata(reason) when is_list(reason), do: Enum.map(reason, &_to_iodata/1)
   defp _to_iodata(reason), do: inspect(reason)
-
-  @project_defaults annotate: true,
-                    commit_msg: "new version %s",
-                    annotation: "new version %s",
-                    tag_prefix: "v"
-
-  defp defaults_from_project(cli_opts) do
-    project = current_project()
-
-    project_config =
-      Map.new(@project_defaults, fn {k, default_val} ->
-        value =
-          case project_get(project, [:versioning, k], nil) do
-            nil -> default_val
-            value -> value
-          end
-
-        {k, value}
-      end)
-
-    Map.merge(project_config, cli_opts)
-  end
 
   defp collect_hooks do
     project = current_project()

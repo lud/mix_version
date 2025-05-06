@@ -1,3 +1,9 @@
+install: uninstall
+  mix do archive.build + archive.install --force
+
+uninstall:
+  mix do archive.uninstall mix_version --force
+
 deps:
   mix deps.get
 

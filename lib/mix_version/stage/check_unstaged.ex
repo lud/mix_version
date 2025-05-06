@@ -33,21 +33,26 @@ defmodule MixVersion.Stage.CheckUnstaged do
       if Mix.Shell.IO.yes?("Commit and tag as-is?", default: :no) do
         {:ok, token}
       else
-        {:stop, "cancelled"}
+        {:stop, "canceled"}
       end
     end
   end
 
   defp print_unstaged(unstaged_files) do
-    CliMate.CLI.warn([
+    MixVersion.CLI.warn([
       "A new commit with the current staged files will be created.",
       ?\n,
-      "The following files have changes that are not staged to git " <>
-        "and will not be included in that commit:\n",
+      ?\n,
+      "The following files have changes that are not staged to git ",
+      ?\n,
+      "and will not be included in that commit:",
+      ?\n,
+      ?\n,
       Enum.map(unstaged_files, &["– ", &1, ?\n]),
       ?\n,
-      "Note that you may add the files to the Git index from another terminal " <>
-        "before moving on. All changes to Git will be included in the commit.",
+      "You may add the files to the Git index from another terminal before",
+      ?\n,
+      "moving on. All changes to Git will be included in the commit.",
       ?\n
     ])
   end

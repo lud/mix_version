@@ -1,25 +1,18 @@
 # mix version
 
+Automatically updates the version of Elixir projects:
 
-
-This is a simple tool to automatically update the version number of an Elixir
-project in the `mix.exs`, commit the change and create and create a git tag
-based on the new version.
-
-Check out [version_tasks](https://hex.pm/packages/version_tasks) for a more
-versatile solution.
+* Updates the version number in `mix.exs`.
+* Commits the changes.
+* Creates an annotated git tag with the new version.
+* Supports hooks to add additional changes, for instance updating a change log.
 
 
 ## Installation
 
-Since version `2.4` it is no more possible to install `mix_version` globally as
-an archive.
+### As a dependency
 
-This is because the `cli_mate` dependency [no longer supports
-it]((https://github.com/lud/cli_mate?tab=readme-ov-file#migration-to-version-070)).
-
-We are working in a way to provide an escrip for mix version. In the meantime,
-it is now required to add `mix_version` as a regular dependency:
+You can install MixVersion as a regular dependency in your Elixir projects:
 
 ```elixir
 def deps do
@@ -29,31 +22,35 @@ def deps do
 end
 ```
 
-If you still want to install globally, you can do so by using the support
-branch:
+
+### Installing globally
+
+When managing multiple projects, it can be easier to install the mix task as an
+archive.
 
 ```bash
-mix archive.install hex mix_version 2.3.2
+mix archive.install hex mix_version
 ```
+
 
 
 ## Breaking changes in version 2
 
 
 The v2 is a partial rewrite where most checks are run before attempting to make
-any modification for the project. A few changes to how the tool should be used
+any modification for the project. A few changes to how MixVersion should be used
 were implemented:
 
-* The configuration of the tool from the config files is not supported anymore.
-  This is to support the tool as a globally installed archive. When
-  `mix_version` is not listed in the dependencies, Elixir would warn if a
-  project contains configuration for an unknown application.
+* The configuration of MixVersion from the config files is not supported
+  anymore. This is to support MixVersion as a globally installed archive. When
+  MixVersion is not listed in the dependencies, Elixir would warn if a project
+  contains configuration for an unknown application.
 * The new configuration is provided by listing a `:versioning` from the
   `project/0` callback of the `mix.exs` file.
-* The `--git-only` option was dropped, as the tool will warn and prompt if some
-  files are not checked in, allowing to fix those issues before any change is
-  made to the `mix.exs` file and any commit/tag is created.
-* Any unchecked change to the `mix.exs` file will prevent the tool to run.
+* The `--git-only` option was dropped. MixVersion will warn and prompt if
+  some files are not checked in, allowing to fix those issues before any change
+  is made to the `mix.exs` file and any commit/tag is created.
+* Any unchecked change to the `mix.exs` file will prevent MixVersion to run.
 * The `:annotate` option is now `true` by default, creating annotated tags.
 
 
@@ -62,8 +59,8 @@ were implemented:
 ## Configuration
 
 
-The configuration for v2 can be provided under `:versioning` from the
-`project/0` callback of the project file:
+Configuration can be provided under `:versioning` from the `project/0` callback
+of the project file:
 
 ```elixir
 # in mix.exs
@@ -79,10 +76,10 @@ end
 
 defp versioning do
   [
-    tag_prefix: "release-",
-    commit_msg: "new version: %s",
-    annotation: "tag release-%s created with mix_version",
-    annotate: true
+    annotate:   true,
+    annotation: "new version %s",
+    commit_msg: "new version %s",
+    tag_prefix: "v"
   ]
 end
 ```
@@ -90,33 +87,12 @@ end
 In the commit message and annotation, any occurence of `%s` will be replaced by
 the new version number. The presence of `%s` is not mandatory.
 
+This configuration is totally optional. The sample values above are the default
+values used by `mix version`.
+
 Configuration can be overriden by command line options. For instance, if
-`:annotate` is set to `true` in configuration, you can use the `--no-annotate`
-CLI flag to force it to be `false`.
-
-
-The following sample configuration is now unsupported and will be ignored.
-
-```elixir
-import Config
-
-# UNSUPPORTED AS OF v2.0.0
-config :mix_version,
-  tag_prefix: "release-",
-  commit_msg: "new version: %s",
-  annotation: "tag release-%s created with mix_version",
-  annotate: true
-```
-
-
-### Default configuration
-
-```elixir
-annotate:   true
-commit_msg: "new version %s"
-annotation: "new version %s"
-tag_prefix: "v"
-```
+`:annotate` is set to `false` in configuration, you can use the `--annotate` CLI
+flag to force it to be `true`.
 
 <!-- doc-end -->
 
