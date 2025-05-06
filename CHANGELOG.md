@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.1] - 2025-05-06
+
+### 🚀 Features
+
+- Embedded cli_mate generated code
+
+### 📚 Documentation
+
+- Better options layout in docs
+
+### ⚙️ Miscellaneous Tasks
+
+- Upgraded credo config
+- Add support branch installation to README
+- Updated repository configuration (#5)
+- Update Elixir Github workflow (#6)
+- Git Cliff configuration
+
 ## [2.4.0] - 2025-03-25
 
 ### 🚀 Features
