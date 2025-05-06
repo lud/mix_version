@@ -31,11 +31,25 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.Markdown do
 
     doc =
       case doc do
-        "" -> ""
-        text -> [" - ", indent_lines_except_first(text, 2)]
+        "" ->
+          ""
+
+        text ->
+          indented =
+            text
+            |> indent_lines_except_first(2)
+            |> IO.chardata_to_string()
+            |> String.trim()
+
+          [" - ", indented]
       end
 
-    ["* ", ["`", Atom.to_string(key), "`"], String.trim(IO.chardata_to_string(doc)), "\n"]
+    [
+      "* ",
+      ["`", Atom.to_string(key), "`"],
+      String.trim_trailing(IO.chardata_to_string(doc)),
+      "\n"
+    ]
   end
 
   @impl true
@@ -53,12 +67,21 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.Markdown do
 
     doc =
       case doc do
-        "" -> ""
-        nil -> ""
-        text -> [" - ", indent_lines_except_first(text, 2)]
-      end
+        "" ->
+          ""
 
-    doc = String.trim(IO.chardata_to_string(doc))
+        nil ->
+          ""
+
+        text ->
+          indented =
+            text
+            |> indent_lines_except_first(2)
+            |> IO.chardata_to_string()
+            |> String.trim()
+
+          [" - ", indented]
+      end
 
     doc =
       case {key, default} do
