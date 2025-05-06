@@ -17,8 +17,8 @@ defmodule Mix.Tasks.Version do
   @default_tag_prefix "v"
   @default_annotate true
 
-  default_doc = fn key, fallback ->
-    "Defaults to`mix.exs[:versioning][#{inspect(key)}]` value if defined or otherwise `#{inspect(fallback)}`."
+  default_doc = fn _key, fallback ->
+    "Defaults is pulled from `mix.exs` with fallback to `#{inspect(fallback)}`."
   end
 
   @command [

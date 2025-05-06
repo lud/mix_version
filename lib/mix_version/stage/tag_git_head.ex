@@ -8,11 +8,8 @@ defmodule MixVersion.Stage.TagGitHead do
   def run(token) do
     tag_name = tag_name(token)
 
-    annotation =
-      case token.opts do
-        %{annotate: true} -> String.replace(token.opts.annotation, "%s", token.next_vsn)
-        _ -> nil
-      end
+    # Always provide a message to the git tag
+    annotation = String.replace(token.opts.annotation, "%s", token.next_vsn)
 
     tag_opts = [
       annotate: token.opts.annotate,
