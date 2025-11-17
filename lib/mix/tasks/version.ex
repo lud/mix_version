@@ -71,8 +71,6 @@ defmodule Mix.Tasks.Version do
     ]
   ]
 
-  @requirements ["loadpaths"]
-
   @usage CLI.format_usage(@command, format: :moduledoc)
   @moduledoc """
   This module implements a mix task whose main purpose is to update the version
@@ -88,6 +86,8 @@ defmodule Mix.Tasks.Version do
 
   @doc false
   def run(argv) do
+    CLI.with_safe_path(:modkit, fn -> Mix.Task.run("loadpaths") end) |> dbg()
+
     command =
       CLI.parse_or_halt!(
         argv,

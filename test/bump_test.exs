@@ -17,6 +17,6 @@ defmodule MixVersion.BumpTest do
     s
     |> Version.parse!()
     |> MixVersion.Stage.GetNextVsn.bump(part)
-    |> to_string
+    |> to_string()
   end
 end
