@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.1] - 2025-11-17
+
+### 🐛 Bug Fixes
+
+- Use CLI safe paths loader
+
+### ⚙️ Miscellaneous Tasks
+
+- Regenerate CLI modules
+
 ## [2.5.0-rc1] - 2025-05-06
 
 ### 🚀 Features

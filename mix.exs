@@ -91,7 +91,7 @@ defmodule MixVersion.MixProject do
       flags: [:unmatched_returns, :error_handling, :unknown, :extra_return],
       list_unused_filters: true,
       plt_add_deps: :app_tree,
-      plt_add_apps: [:ex_unit, :mix, :cli_mate],
+      plt_add_apps: [:ex_unit, :mix],
       plt_local_path: "_build/plts"
     ]
   end
