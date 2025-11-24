@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.2] - 2025-11-24
+
+### 🐛 Bug Fixes
+
+- Fix app loader without dev deps
+
 ## [2.5.1] - 2025-11-17
 
 ### 🐛 Bug Fixes
