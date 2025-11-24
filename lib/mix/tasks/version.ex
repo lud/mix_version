@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Version do
 
   @doc false
   def run(argv) do
-    CLI.with_safe_path(:modkit, fn -> Mix.Task.run("loadpaths") end)
+    CLI.with_safe_path(:mix_version, fn -> Mix.Task.run("loadpaths") end)
 
     command =
       CLI.parse_or_halt!(
