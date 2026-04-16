@@ -21,6 +21,11 @@ defmodule MixVersion.CLI.UsageFormat do
   @callback section_margin() :: iodata()
 
   @doc """
+  This callback is only called if there is at least one subcommand.
+  """
+  @callback format_subcommands(subcommands :: [{atom, Command.t()}], fmt_opts) :: iodata()
+
+  @doc """
   This callback is only called if there is at least one argument.
   """
   @callback format_arguments(command :: Command.t(), fmt_opts) :: iodata()
@@ -57,6 +62,19 @@ defmodule MixVersion.CLI.UsageFormat do
         fmt_opts
       )
 
+    subcommands_section =
+      case command.subcommands do
+        [] ->
+          nil
+
+        _ ->
+          adapter.format_section(
+            "Sub-commands",
+            adapter.format_subcommands(build_subcommands(command), fmt_opts),
+            fmt_opts
+          )
+      end
+
     arguments_section =
       case command.arguments do
         [] ->
@@ -73,9 +91,13 @@ defmodule MixVersion.CLI.UsageFormat do
     options_section =
       adapter.format_section("Options", adapter.format_options(command, fmt_opts), fmt_opts)
 
-    [head, synopsis_section, arguments_section, options_section]
+    [head, synopsis_section, subcommands_section, arguments_section, options_section]
     |> Enum.reject(&is_nil/1)
     |> Enum.intersperse(adapter.section_margin())
+  end
+
+  defp build_subcommands(command) do
+    Enum.map(command.subcommands, fn {key, v} -> {key, Command.new(v)} end)
   end
 
   defp default_fmt_opts do
@@ -85,13 +107,14 @@ defmodule MixVersion.CLI.UsageFormat do
   defp synopsis_line(command) do
     call = format_command_name(command)
 
-    argslist =
+    sub_or_args =
       case command do
-        %{arguments: []} -> ""
-        %{arguments: args} -> format_usage_args_list(args)
+        %{arguments: [_ | _] = args} -> format_usage_args_list(args)
+        %{subcommands: [_ | _]} -> " <subcommand>"
+        _ -> ""
       end
 
-    [call, " [options]", argslist]
+    [call, " [options]", sub_or_args]
   end
 
   defp format_command_name(command) do

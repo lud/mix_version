@@ -26,6 +26,19 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.Markdown do
   def section_margin, do: "\n\n"
 
   @impl true
+  def format_subcommands(subcommands, _fmt_opts) do
+    Enum.map(subcommands, fn {key, sub} ->
+      doc_part =
+        case sub.doc do
+          nil -> ""
+          text -> [" - ", String.trim(IO.chardata_to_string(text))]
+        end
+
+      ["* ", "`", Atom.to_string(key), "`", doc_part, "\n"]
+    end)
+  end
+
+  @impl true
   def format_arguments(command, _fmt_opts) do
     Enum.map(command.arguments, &format_argument/1)
   end

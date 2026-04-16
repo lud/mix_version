@@ -7,6 +7,7 @@
 #
 defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
   alias MixVersion.CLI.Argument
+  alias MixVersion.CLI.Command
   alias MixVersion.CLI.Option
 
   @moduledoc false
@@ -60,10 +61,30 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
   def section_margin, do: "\n\n"
 
   @impl true
-  def format_arguments(command, fmt_opts) do
-    columns = Keyword.get_lazy(fmt_opts, :io_columns, &io_columns/0)
+  def format_subcommands(subcommands, fmt_opts) do
+    columns = Keyword.get_lazy(fmt_opts, :io_columns, &MixVersion.CLI.io_columns/0)
     ansi_enabled? = Keyword.get(fmt_opts, :ansi_enabled, false)
+    doc_width = min(columns - @doc_indent, @max_doc_width)
 
+    Enum.map_intersperse(subcommands, "\n\n", fn {key, sub} ->
+      name = Atom.to_string(key)
+      title = arg_title(name, false, ansi_enabled?)
+      len = String.length(name) + @arg_indent
+      spacing = @doc_indent - len
+      doc_padding = [?\n, indent(@doc_indent)]
+      padding = if spacing > 1, do: indent(spacing), else: doc_padding
+
+      case format_doc(sub, doc_width, padding, doc_padding) do
+        :no_doc -> [indent(@arg_indent), title]
+        doc -> [indent(@arg_indent), title, doc]
+      end
+    end)
+  end
+
+  @impl true
+  def format_arguments(command, fmt_opts) do
+    columns = Keyword.get_lazy(fmt_opts, :io_columns, &MixVersion.CLI.io_columns/0)
+    ansi_enabled? = Keyword.get(fmt_opts, :ansi_enabled, false)
     doc_width = min(columns - @doc_indent, @max_doc_width)
 
     Enum.map_intersperse(command.arguments, "\n\n", fn arg ->
@@ -93,7 +114,7 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
 
   @impl true
   def format_options(command, fmt_opts) do
-    columns = Keyword.get_lazy(fmt_opts, :io_columns, &io_columns/0)
+    columns = Keyword.get_lazy(fmt_opts, :io_columns, &MixVersion.CLI.io_columns/0)
     ansi_enabled? = Keyword.get(fmt_opts, :ansi_enabled, false)
     options = command.options
     doc_padding = [?\n, indent(@doc_indent)]
@@ -167,6 +188,27 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
       end
   end
 
+  defp format_doc(%Command{} = subcommand, width, first_padding, other_padding) do
+    %{doc: doc} = subcommand
+
+    case doc do
+      nil ->
+        :no_doc
+
+      "" ->
+        :no_doc
+
+      _ ->
+        doc =
+          doc
+          |> unwrap_doc()
+          |> wrap_doc(width)
+          |> Enum.intersperse(other_padding)
+
+        [first_padding, doc]
+    end
+  end
+
   defp format_doc(%Argument{} = argument, width, first_padding, other_padding) do
     %{doc: doc} = argument
 
@@ -217,13 +259,6 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
 
   defp name(%Option{key: key}) do
     key |> Atom.to_string() |> String.replace("_", "-")
-  end
-
-  defp io_columns do
-    case :io.columns() do
-      {:ok, n} -> n
-      _ -> 78
-    end
   end
 
   defp bright(iodata), do: [IO.ANSI.bright(), iodata, IO.ANSI.reset()]

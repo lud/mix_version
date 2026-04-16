@@ -11,12 +11,13 @@ defmodule MixVersion.CLI.Argument do
   defstruct @enforce_keys
 
   @type vtype :: :integer | :float | :string
+  @type caster :: (term -> {:ok, term} | {:error, term}) | {module, atom, [term]}
   @type t :: %__MODULE__{
           key: atom,
           required: boolean,
           type: vtype,
           doc: binary | nil,
-          cast: nil | (term -> {:ok, term} | {:error, term}) | {module, atom, [term]}
+          cast: nil | caster
         }
 
   def new(key, conf) when is_atom(key) and is_list(conf) do
@@ -28,12 +29,20 @@ defmodule MixVersion.CLI.Argument do
     repeat = Keyword.get(conf, :repeat, false)
 
     validate_type(type)
-    validate_cast(cast)
+    validate_cast!(cast)
 
     %__MODULE__{key: key, required: required, cast: cast, doc: doc, type: type, repeat: repeat}
   end
 
-  defp validate_cast(cast) do
+  @doc """
+  Validates that the given cast value is a valid caster.
+
+  A valid caster is either `nil`, a function of arity 1, or an MFA tuple
+  `{module, function, args}` where args is a list.
+
+  Raises `ArgumentError` if the cast is invalid.
+  """
+  def validate_cast!(cast) do
     case cast do
       f when is_function(f, 1) ->
         :ok
