@@ -9,10 +9,16 @@ defmodule MixVersion.Stage.CommitChanges do
   def applies?(%{git_cmd?: has_git, git_repo: repo}), do: has_git && is_struct(repo)
 
   def run(token) do
+    allow_empty? =
+      case token.opts do
+        %{tag_current: true} -> true
+        _ -> false
+      end
+
     commit_msg_tpl = token.opts.commit_msg
     commit_msg = String.replace(commit_msg_tpl, "%s", token.next_vsn)
 
-    with :ok <- MixVersion.Git.commit(token.git_repo, commit_msg) do
+    with :ok <- MixVersion.Git.commit(token.git_repo, commit_msg, allow_empty: allow_empty?) do
       MixVersion.CLI.debug("committed changes to git")
       {:ok, token}
     end

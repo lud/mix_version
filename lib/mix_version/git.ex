@@ -108,8 +108,18 @@ defmodule MixVersion.Git do
     end
   end
 
-  def commit(%Repo{} = repo, message) do
-    with {:ok, _} <- git(repo, ["commit", "-m", message]) do
+  def commit(%Repo{} = repo, message, opts \\ []) do
+    args = ["-m", message]
+
+    args =
+      case opts[:allow_empty] do
+        true -> ["--allow-empty" | args]
+        _ -> args
+      end
+
+    args = ["commit" | args]
+
+    with {:ok, _} <- git(repo, args) do
       :ok
     end
   end
