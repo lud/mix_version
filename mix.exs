@@ -28,7 +28,7 @@ defmodule MixVersion.MixProject do
   defp deps do
     [
       # App
-      {:cli_mate, "~> 0.8", only: [:dev], runtime: false},
+      {:cli_mate, "~> 0.10", only: [:dev], runtime: false},
 
       # Dev, Test
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
