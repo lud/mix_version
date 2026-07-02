@@ -4,7 +4,7 @@ install: uninstall
 uninstall:
   mix do archive.uninstall mix_version --force
 
-deps:
+_mix_deps:
   mix deps.get
 
 test:
@@ -17,14 +17,16 @@ lint:
 dialyzer:
   mix dialyzer
 
-_mix_format:
-  mix format
+format:
+  mix format --migrate
 
-_mix_check:
-  mix check
+readmix:
+  mix rdmx.update README.md
+
+_libdev_check:
+  mix libdev.check
 
 _git_status:
   git status
 
-check: deps _mix_format _mix_check _git_status
-
+check: _mix_deps format readmix _libdev_check _git_status

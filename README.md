@@ -1,5 +1,15 @@
 # mix version
 
+<!-- rdmx :badges
+    hexpm         : "mix_version?color=4e2a8e"
+    github_action : "lud/mix_version/elixir.yaml?label=CI&branch=main"
+    license       : mix_version
+    -->
+[![hex.pm Version](https://img.shields.io/hexpm/v/mix_version?color=4e2a8e)](https://hex.pm/packages/mix_version)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/lud/mix_version/elixir.yaml?label=CI&branch=main)](https://github.com/lud/mix_version/actions/workflows/elixir.yaml?query=branch%3Amain)
+[![License](https://img.shields.io/hexpm/l/mix_version.svg)](https://hex.pm/packages/mix_version)
+<!-- rdmx /:badges -->
+
 Automatically updates the version of Elixir projects:
 
 * Updates the version number in `mix.exs`.
@@ -14,13 +24,15 @@ Automatically updates the version of Elixir projects:
 
 You can install MixVersion as a regular dependency in your Elixir projects:
 
+<!-- rdmx :app_dep vsn:$app_vsn only:"dev,test" runtime:false -->
 ```elixir
-def deps do
+defp deps do
   [
-    {:mix_version, "~> 2.4", only: [:dev, :test], runtime: false},
+    {:mix_version, "~> 2.5", only: [:dev, :test], runtime: false},
   ]
 end
 ```
+<!-- rdmx /:app_dep -->
 
 
 ### Installing globally
