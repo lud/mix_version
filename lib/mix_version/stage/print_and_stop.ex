@@ -5,6 +5,8 @@ defmodule MixVersion.Stage.PrintAndStop do
   """
   alias MixVersion.Token
 
+  @behaviour MixVersion.Stage
+
   def applies?(%Token{opts: %{info: info}}), do: !!info
 
   @spec run(Token.t()) :: no_return()

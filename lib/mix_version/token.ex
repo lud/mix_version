@@ -17,6 +17,13 @@ defmodule MixVersion.Token do
 
   @type t :: %__MODULE__{}
 
+  @doc """
+  Builds a new token with the current version, the parsed CLI options and the
+  configured hooks.
+
+  The Git related fields start with their default values and are filled by the
+  Git detection stages.
+  """
   def new(current_vsn, opts, hooks) do
     struct!(__MODULE__,
       current_vsn: current_vsn,
@@ -30,6 +37,9 @@ defmodule MixVersion.Token do
   @defaults
   |> Keyword.keys()
   |> Enum.each(fn k ->
+    @doc """
+    Returns the token with the `#{inspect(k)}` field set to the given value.
+    """
     def unquote(:"put_#{k}")(%__MODULE__{} = token, value) do
       Map.put(token, unquote(k), value)
     end

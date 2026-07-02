@@ -3,6 +3,8 @@ defmodule MixVersion.Stage.TagGitHead do
   Stage that creates a possibly annotated tag at the current Git HEAD.
   """
 
+  @behaviour MixVersion.Stage
+
   def applies?(%{git_cmd?: has_git, git_repo: repo}), do: has_git && is_struct(repo)
 
   def run(token) do
@@ -22,6 +24,10 @@ defmodule MixVersion.Stage.TagGitHead do
     end
   end
 
+  @doc """
+  Returns the Git tag name for the token's next version, prepending the
+  configured tag prefix.
+  """
   def tag_name(token) do
     token.opts.tag_prefix <> token.next_vsn
   end

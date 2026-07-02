@@ -117,6 +117,12 @@ defmodule Mix.Tasks.Version do
     run_stages(stages, token)
   end
 
+  @doc """
+  Returns the default value for the given command line option.
+
+  The value is read from the `:versioning` configuration of the current Mix
+  project, with a fallback to the built-in default.
+  """
   def default_opt(:commit_msg), do: default_from_project(:commit_msg, @default_commit_msg)
   def default_opt(:annotation), do: default_from_project(:annotation, @default_annotation)
   def default_opt(:tag_prefix), do: default_from_project(:tag_prefix, @default_tag_prefix)

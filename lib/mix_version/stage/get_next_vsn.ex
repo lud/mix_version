@@ -54,6 +54,7 @@ defmodule MixVersion.Stage.GetNextVsn do
     end
   end
 
+  @doc false
   def bump(%Version{pre: [_ | _]} = vsn, :patch),
     do: Map.put(vsn, :pre, [])
 

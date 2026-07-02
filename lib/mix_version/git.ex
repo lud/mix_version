@@ -19,6 +19,9 @@ defmodule MixVersion.Git do
     exec("git", args, opts)
   end
 
+  @doc """
+  Returns whether the `git` command is available on the system.
+  """
   def installed? do
     case exec("git", ["--help"]) do
       {:error, :command_not_found} -> false
@@ -26,6 +29,13 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Returns `{:ok, repo}` where `repo` represents the Git repository containing
+  the given path.
+
+  Returns `{:error, :no_git_repo}` when the path does not belong to a Git work
+  tree.
+  """
   def get_repo(path) do
     case exec("git", ["rev-parse", "--show-toplevel"], cd: path, stderr_to_stdout: true) do
       {:ok, rootpath} -> {:ok, struct(Repo, root: String.trim(rootpath))}
@@ -33,6 +43,10 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Returns `{:ok, paths}` where `paths` lists the files of the repository with
+  unstaged changes, including untracked files.
+  """
   def get_unstaged(%Repo{} = repo) do
     case git(repo, ["status", "--porcelain=v1"]) do
       {:ok, output} ->
@@ -97,10 +111,18 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Returns the given path relative to the repository root.
+
+  Raises when the path is outside of the repository or does not exist.
+  """
   def path_relative_to(path, %Repo{} = repo) do
     relative_path!(repo, path)
   end
 
+  @doc """
+  Stages the file at the given path to the Git index.
+  """
   def add(%Repo{} = repo, path) do
     with {:ok, relpath} <- relative_path(repo, path),
          {:ok, _} <- git(repo, ["add", relpath]) do
@@ -108,6 +130,14 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Creates a Git commit with the given message.
+
+  ### Options
+
+  * `:allow_empty` - when `true`, passes the `--allow-empty` flag so the commit
+    is created even when the index contains no change.
+  """
   def commit(%Repo{} = repo, message, opts \\ []) do
     args = ["-m", message]
 
@@ -124,6 +154,12 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Checks that the given tag name is not already used in the repository.
+
+  Returns `{:ok, true}` when the tag is available, `{:ok, false}` when a tag
+  with that name already exists.
+  """
   def check_tag_availability(%Repo{} = repo, tag) when is_binary(tag) do
     case git(repo, ["tag", "-l"]) do
       {:ok, taglist} ->
@@ -136,6 +172,15 @@ defmodule MixVersion.Git do
     end
   end
 
+  @doc """
+  Creates a Git tag with the given name at the current HEAD.
+
+  ### Options
+
+  * `:annotation` - required, the tag message.
+  * `:annotate` - when `true`, creates an annotated tag carrying the
+    annotation message. Defaults to `false`.
+  """
   def tag(%Repo{} = repo, name, opts) do
     message = Keyword.fetch!(opts, :annotation)
     args = ["tag", name, "-m", message]

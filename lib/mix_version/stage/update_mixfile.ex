@@ -49,6 +49,10 @@ defmodule MixVersion.Stage.UpdateMixfile do
     end
   end
 
+  @doc """
+  Returns whether Git operations are enabled for this run, that is when the
+  `git` command is installed and a repository was found.
+  """
   def git_enabled?(%{git_cmd?: has_git, git_repo: repo}), do: has_git && is_struct(repo)
 
   defp maybe_git_add_mixfile(path, token) do

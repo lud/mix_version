@@ -1,13 +1,21 @@
 defmodule MixVersion.Stage.ApplyHook do
   @moduledoc """
-  Stage that creates a new Git commit with the updated `mix.exs` file and all
-  other changes added to the Git index.
+  Stage that applies the hooks configured under a given key of the
+  `:versioning` project configuration, such as `:before_commit`.
   """
 
   @behaviour MixVersion.Stage
 
   def applies?(_), do: true
 
+  @doc """
+  Applies the hooks registered in the token under the given key.
+
+  A hook is either a function that receives the next version and returns `:ok`
+  or `{:error, reason}`, or an `add: path` entry that stages the file at
+  `path` to the Git index. Execution stops at the first hook returning an
+  error.
+  """
   def run(token, key) do
     case apply_hook(token.hooks[key], token) do
       {:ok, token} ->
