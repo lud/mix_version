@@ -1,10 +1,12 @@
-Mix.path_for(:archives)
-|> Path.join("*")
-|> Path.wildcard()
-|> Enum.any?(&String.contains?(&1, "mix_version"))
-|> case do
-  true -> raise "mix_version is installed globally, tests will fail. Call `just uninstall`."
-  false -> :ok
-end
+# Git translates its messages. Force English messages so that assertions on
+# command output do not depend on the developer's environment. Only the message
+# locale is pinned: setting LC_ALL would also switch the character encoding and
+# make the subapp VM run with a latin1 native name encoding.
+System.delete_env("LANGUAGE")
+System.put_env("LC_MESSAGES", "C")
+
+{:ok, _} = Application.ensure_all_started(:briefly)
+
+:ok = MixVersion.Support.Subapp.build_secondary_master!()
 
 ExUnit.start()

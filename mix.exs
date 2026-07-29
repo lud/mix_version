@@ -8,6 +8,8 @@ defmodule MixVersion.MixProject do
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      test_ignore_filters: [&String.starts_with?(&1, "test/subapp/")],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer(),
@@ -25,12 +27,16 @@ defmodule MixVersion.MixProject do
     ]
   end
 
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   defp deps do
     [
       # App
       {:cli_mate, "~> 0.8", only: [:dev, :test], runtime: false},
 
       # Dev, Test
+      {:briefly, "~> 0.5", only: :test},
       {:libdev, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:readmix, ">= 0.0.0", only: [:dev, :test], runtime: false}
     ]
@@ -50,6 +56,7 @@ defmodule MixVersion.MixProject do
     [
       mount: [
         {MixVersion, "lib/mix_version"},
+        {MixVersion.Support, "test/support"},
         {Mix.Tasks, "lib/mix/tasks", flavor: :mix_task}
       ]
     ]
