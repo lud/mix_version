@@ -84,6 +84,19 @@ defmodule Mix.Tasks.Version do
 
   @shortdoc "Manages the version of an Elixir application"
 
+  @stages [
+    MixVersion.Stage.PrintAndStop,
+    MixVersion.Stage.DetectGitCommand,
+    MixVersion.Stage.FindGitRepo,
+    MixVersion.Stage.CheckUnstaged,
+    MixVersion.Stage.GetNextVsn,
+    MixVersion.Stage.CheckGitTag,
+    {MixVersion.Stage.ApplyHook, [:before_commit]},
+    MixVersion.Stage.UpdateMixfile,
+    MixVersion.Stage.CommitChanges,
+    MixVersion.Stage.TagGitHead
+  ]
+
   @doc false
   def run(argv) do
     CLI.with_safe_path(:mix_version, fn -> Mix.Task.run("loadpaths") end)
@@ -96,25 +109,32 @@ defmodule Mix.Tasks.Version do
 
     %{options: opts} = command
 
-    opts = check_mutex_opts(opts)
-    hooks = collect_hooks()
+    env = %{
+      opts: opts,
+      hooks: collect_hooks(),
+      current_vsn: current_vsn(),
+      mixfile_path: Mix.Project.project_file(),
+      cwd: File.cwd!()
+    }
 
-    token = MixVersion.Token.new(current_vsn(), opts, hooks)
+    case exec(env) do
+      {:ok, _token} ->
+        :ok
 
-    stages = [
-      MixVersion.Stage.PrintAndStop,
-      MixVersion.Stage.DetectGitCommand,
-      MixVersion.Stage.FindGitRepo,
-      MixVersion.Stage.CheckUnstaged,
-      MixVersion.Stage.GetNextVsn,
-      MixVersion.Stage.CheckGitTag,
-      {MixVersion.Stage.ApplyHook, [:before_commit]},
-      MixVersion.Stage.UpdateMixfile,
-      MixVersion.Stage.CommitChanges,
-      MixVersion.Stage.TagGitHead
-    ]
+      {:error, reason} ->
+        reason |> to_iodata() |> CLI.halt_error()
 
-    run_stages(stages, token)
+      {:stop, reason} ->
+        reason |> to_iodata() |> CLI.warn()
+        CLI.halt()
+    end
+  end
+
+  @doc false
+  def exec(env) do
+    with :ok <- check_mutex_opts(env.opts) do
+      run_stages(@stages, MixVersion.Token.new(env))
+    end
   end
 
   @doc """
@@ -142,18 +162,12 @@ defmodule Mix.Tasks.Version do
   end
 
   defp run_stages(stages, token) do
-    Enum.reduce(stages, token, fn stage, token ->
+    Enum.reduce_while(stages, {:ok, token}, fn stage, {:ok, token} ->
       case run_stage(stage, token) do
-        {:ok, %MixVersion.Token{} = token} ->
-          # token |> Map.put(:opts, :_) |> IO.inspect(label: "new token")
-          token
-
-        {:error, reason} ->
-          reason |> to_iodata() |> CLI.halt_error()
-
-        {:stop, reason} ->
-          reason |> to_iodata() |> CLI.warn()
-          CLI.halt()
+        {:ok, %MixVersion.Token{} = token} -> {:cont, {:ok, token}}
+        {:halt, %MixVersion.Token{} = token} -> {:halt, {:ok, token}}
+        {:error, _reason} = err -> {:halt, err}
+        {:stop, _reason} = stop -> {:halt, stop}
       end
     end)
   end
@@ -190,7 +204,7 @@ defmodule Mix.Tasks.Version do
     end)
   end
 
-  defp check_mutex_opts(%{patch: p, minor: m, major: ma, new_version: n, tag_current: c} = opts) do
+  defp check_mutex_opts(%{patch: p, minor: m, major: ma, new_version: n, tag_current: c}) do
     check_mutex =
       case {p, m, ma, n, c} do
         {true, false, false, nil, false} -> :ok
@@ -203,12 +217,11 @@ defmodule Mix.Tasks.Version do
 
     case check_mutex do
       :ok ->
-        opts
+        :ok
 
       :error ->
-        CLI.halt_error(
-          "Options --patch, --minor, --major, --new-version and --tag-current are mutually exclusive"
-        )
+        {:error,
+         "Options --patch, --minor, --major, --new-version and --tag-current are mutually exclusive"}
     end
   end
 end

@@ -10,6 +10,10 @@ defmodule MixVersion.MixProject do
       elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       test_ignore_filters: [&String.starts_with?(&1, "test/subapp/")],
+      test_coverage: [
+        ignore_modules: [~r/^MixVersion\.CLI/, ~r/^MixVersion\.Support\./],
+        summary: [threshold: 75]
+      ],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: dialyzer(),

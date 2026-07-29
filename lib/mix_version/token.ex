@@ -4,33 +4,38 @@ defmodule MixVersion.Token do
   from all stages.
   """
 
-  @enforce_keys [:opts, :git_cmd?, :git_repo, :current_vsn]
+  @enforce_keys [:opts, :git_cmd?, :git_repo, :current_vsn, :mixfile_path, :cwd]
   @defaults [
     opts: nil,
     git_cmd?: false,
     git_repo: nil,
     current_vsn: nil,
     next_vsn: nil,
-    hooks: %{}
+    hooks: %{},
+    mixfile_path: nil,
+    cwd: nil
   ]
   defstruct @defaults
 
   @type t :: %__MODULE__{}
 
   @doc """
-  Builds a new token with the current version, the parsed CLI options and the
-  configured hooks.
+  Builds a new token from an environment map containing the current version,
+  the parsed CLI options, the configured hooks, the path of the project
+  mixfile and the working directory.
 
   The Git related fields start with their default values and are filled by the
   Git detection stages.
   """
-  def new(current_vsn, opts, hooks) do
+  def new(env) do
     struct!(__MODULE__,
-      current_vsn: current_vsn,
-      opts: opts,
+      current_vsn: env.current_vsn,
+      opts: env.opts,
       git_cmd?: false,
       git_repo: nil,
-      hooks: hooks
+      hooks: env.hooks,
+      mixfile_path: env.mixfile_path,
+      cwd: env.cwd
     )
   end
 

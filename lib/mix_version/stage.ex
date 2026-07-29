@@ -5,6 +5,9 @@ defmodule MixVersion.Stage do
 
   @callback applies?(MixVersion.Token.t()) :: boolean()
   @callback run(MixVersion.Token.t()) ::
-              {:ok, MixVersion.Token.t()} | {:error, term} | {:stop, term}
+              {:ok, MixVersion.Token.t()}
+              | {:halt, MixVersion.Token.t()}
+              | {:error, term}
+              | {:stop, term}
   @optional_callbacks run: 1
 end

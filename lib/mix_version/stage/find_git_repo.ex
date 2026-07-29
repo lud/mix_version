@@ -8,7 +8,7 @@ defmodule MixVersion.Stage.FindGitRepo do
   def applies?(%{git_cmd?: has_git?}), do: has_git?
 
   def run(token) do
-    case MixVersion.Git.get_repo(File.cwd!()) do
+    case MixVersion.Git.get_repo(token.cwd) do
       {:ok, repo} ->
         MixVersion.CLI.debug("found Git repository at #{repo.root}")
         {:ok, MixVersion.Token.put_git_repo(token, repo)}

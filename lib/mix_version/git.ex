@@ -10,11 +10,18 @@ defmodule MixVersion.Git do
     defstruct root: nil
   end
 
+  # Git translates its messages according to the locale defined in the
+  # environment, and this module parses the output of some commands. Messages
+  # are therefore pinned to English. `LC_ALL` and `LANGUAGE` are unset as both
+  # take precedence over `LC_MESSAGES`.
+  @git_env [{"LC_MESSAGES", "C"}, {"LC_ALL", nil}, {"LANGUAGE", nil}]
+
   defp git(%Repo{root: root}, args, opts \\ []) when is_list(args) do
     opts =
       opts
       |> Keyword.put_new(:stderr_to_stdout, true)
       |> Keyword.put_new(:cd, root)
+      |> Keyword.put_new(:env, @git_env)
 
     exec("git", args, opts)
   end
@@ -23,7 +30,7 @@ defmodule MixVersion.Git do
   Returns whether the `git` command is available on the system.
   """
   def installed? do
-    case exec("git", ["--help"]) do
+    case exec("git", ["--help"], env: @git_env) do
       {:error, :command_not_found} -> false
       {:ok, _} -> true
     end
@@ -37,7 +44,11 @@ defmodule MixVersion.Git do
   tree.
   """
   def get_repo(path) do
-    case exec("git", ["rev-parse", "--show-toplevel"], cd: path, stderr_to_stdout: true) do
+    case exec("git", ["rev-parse", "--show-toplevel"],
+           cd: path,
+           stderr_to_stdout: true,
+           env: @git_env
+         ) do
       {:ok, rootpath} -> {:ok, struct(Repo, root: String.trim(rootpath))}
       {:error, {:system_cmd, _, _, _, 128}} -> {:error, :no_git_repo}
     end

@@ -1,7 +1,7 @@
 defmodule MixVersion.Stage.PrintAndStop do
   @moduledoc """
-  This stage checks for the output command and prints the version and exits if
-  the flag is provided.
+  This stage checks for the output command and prints the version and halts
+  the pipeline if the flag is provided.
   """
   alias MixVersion.Token
 
@@ -9,9 +9,8 @@ defmodule MixVersion.Stage.PrintAndStop do
 
   def applies?(%Token{opts: %{info: info}}), do: !!info
 
-  @spec run(Token.t()) :: no_return()
-  def run(%Token{current_vsn: vsn}) do
+  def run(%Token{current_vsn: vsn} = token) do
     IO.puts(vsn)
-    System.halt()
+    {:halt, token}
   end
 end

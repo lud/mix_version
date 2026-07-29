@@ -9,7 +9,7 @@ defmodule MixVersion.Stage.UpdateMixfile do
   def applies?(_), do: true
 
   def run(token) do
-    path = Mix.Project.project_file()
+    path = token.mixfile_path
 
     with {:ok, content} <- File.read(path),
          {:ok, new_content} <- swap_mixfile_version(token, content),

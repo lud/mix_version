@@ -25,9 +25,8 @@ defmodule MixVersion.Stage.ApplyHook do
         err
 
       {:invalid, other} ->
-        MixVersion.CLI.halt_error(
-          "Hook #{inspect(key)} returned invalid result, expected :ok or {:error, binary}, got: #{inspect(other)}"
-        )
+        {:error,
+         "Hook #{inspect(key)} returned invalid result, expected :ok or {:error, binary}, got: #{inspect(other)}"}
     end
   end
 
@@ -57,9 +56,13 @@ defmodule MixVersion.Stage.ApplyHook do
   end
 
   defp apply_hook({:add, path}, token) when is_binary(path) do
-    with :ok <- MixVersion.Git.add(token.git_repo, path) do
-      MixVersion.CLI.writeln("Staged #{path} to Git index")
-      {:ok, token}
+    if is_struct(token.git_repo) do
+      with :ok <- MixVersion.Git.add(token.git_repo, path) do
+        MixVersion.CLI.writeln("Staged #{path} to Git index")
+        {:ok, token}
+      end
+    else
+      {:error, "Could not stage #{path} to Git index, no Git repository was found"}
     end
   end
 end
