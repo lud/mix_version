@@ -43,11 +43,11 @@ defmodule MixVersion.Config do
 
   ### Examples
 
-      iex> project = [app: :my_app, versioning: [annotate: true]]
+      iex> project = [app: :my_app, versioning: [tag_prefix: "release/"]]
       iex> MixVersion.Config.project_get(project, :app)
       :my_app
-      iex> MixVersion.Config.project_get(project, [:versioning, :annotate])
-      true
+      iex> MixVersion.Config.project_get(project, [:versioning, :tag_prefix])
+      "release/"
   """
   def project_get(mod, key_or_path) do
     _project_get(mod, key_or_path)
@@ -60,8 +60,8 @@ defmodule MixVersion.Config do
 
   ### Examples
 
-      iex> MixVersion.Config.project_get([app: :my_app], [:versioning, :annotate], false)
-      false
+      iex> MixVersion.Config.project_get([app: :my_app], [:versioning, :tag_prefix], "v")
+      "v"
   """
   def project_get(mod, key_or_path, default) do
     _project_get(mod, key_or_path)

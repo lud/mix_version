@@ -15,7 +15,6 @@ defmodule Mix.Tasks.Version do
   @default_commit_msg "new version %s"
   @default_annotation "new version %s"
   @default_tag_prefix "v"
-  @default_annotate true
 
   default_doc = fn _key, fallback ->
     "Defaults is pulled from `mix.exs` with fallback to `#{inspect(fallback)}`."
@@ -37,9 +36,8 @@ defmodule Mix.Tasks.Version do
       annotate: [
         type: :boolean,
         short: :a,
-        doc: "Create an annotated git tag.",
-        default: &__MODULE__.default_opt/1,
-        default_doc: default_doc.(:annotate, @default_annotate)
+        doc: "Has no effect, tags are always annotated.",
+        deprecated: "tags are always annotated"
       ],
       commit_msg: [
         type: :string,
@@ -146,7 +144,6 @@ defmodule Mix.Tasks.Version do
   def default_opt(:commit_msg), do: default_from_project(:commit_msg, @default_commit_msg)
   def default_opt(:annotation), do: default_from_project(:annotation, @default_annotation)
   def default_opt(:tag_prefix), do: default_from_project(:tag_prefix, @default_tag_prefix)
-  def default_opt(:annotate), do: default_from_project(:annotate, @default_annotate)
 
   defp default_from_project(key, default_default) do
     project = current_project()

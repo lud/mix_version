@@ -6,9 +6,24 @@
 #   mix cli.embed --no-moduledoc MixVersion.CLI lib/mix_version/cli -fy
 #
 defmodule MixVersion.CLI.Option do
+  alias MixVersion.CLI.OptsValidator
+
   @moduledoc false
-  @enforce_keys [:key, :doc, :type, :short, :default, :keep, :doc_arg, :default_doc, :cast]
+  @enforce_keys [
+    :key,
+    :doc,
+    :type,
+    :short,
+    :default,
+    :keep,
+    :doc_arg,
+    :default_doc,
+    :cast,
+    :deprecated
+  ]
   defstruct @enforce_keys
+
+  @types [:boolean, :count, :integer, :float, :string]
 
   @type vtype :: :integer | :float | :string | :count | :boolean
   @type caster :: (term -> {:ok, term} | {:error, term}) | {module, atom, [term]}
@@ -21,22 +36,38 @@ defmodule MixVersion.CLI.Option do
           keep: boolean,
           doc_arg: String.t(),
           default_doc: String.t(),
-          cast: nil | caster
+          cast: nil | caster,
+          deprecated: nil | boolean | String.t()
         }
 
-  def new(key, conf) when is_atom(key) and is_list(conf) do
-    keep = Keyword.get(conf, :keep, false)
-    type = Keyword.get(conf, :type, :string)
-    doc = Keyword.get(conf, :doc) || ""
-    short = Keyword.get(conf, :short, nil)
-    doc_arg = Keyword.get_lazy(conf, :doc_arg, fn -> default_doc_arg(type) end)
-    default_doc = Keyword.get(conf, :default_doc, nil)
-    cast = Keyword.get(conf, :cast, nil)
+  @doc """
+  Builds an option struct from its key and settings.
 
-    MixVersion.CLI.Argument.validate_cast!(cast)
+  The accepted settings are listed in the module documentation. Raises an
+  `ArgumentError` when the settings are invalid.
+
+  ### Examples
+
+  Settings that are not provided are given default values:
+
+      iex> option = CliMate.CLI.Option.new(:verbose, type: :boolean, short: :v)
+      iex> option.short
+      :v
+      iex> option.keep
+      false
+  """
+  def new(key, conf) when is_atom(key) do
+    settings = OptsValidator.validate!(conf, "option #{inspect(key)}", &validate_setting/2)
+
+    keep = Map.get(settings, :keep, false)
+    type = Map.get(settings, :type, :string)
+
+    if keep and type == :count do
+      raise ArgumentError, "option #{inspect(key)} cannot use keep: true with type: :count"
+    end
 
     default =
-      case Keyword.fetch(conf, :default) do
+      case Map.fetch(settings, :default) do
         {:ok, term} -> {:default, term}
         :error when keep -> {:default, []}
         :error -> :skip
@@ -44,20 +75,65 @@ defmodule MixVersion.CLI.Option do
 
     %__MODULE__{
       key: key,
-      doc: doc,
+      doc: Map.get(settings, :doc) || "",
       type: type,
-      short: short,
+      short: Map.get(settings, :short),
       default: default,
       keep: keep,
-      doc_arg: doc_arg,
-      default_doc: default_doc,
-      cast: cast
+      doc_arg: Map.get_lazy(settings, :doc_arg, fn -> default_doc_arg(type) end),
+      default_doc: Map.get(settings, :default_doc),
+      cast: Map.get(settings, :cast),
+      deprecated: Map.get(settings, :deprecated)
     }
   end
+
+  def new(key, _conf) do
+    raise ArgumentError, "invalid option key, expected an atom, got: #{inspect(key)}"
+  end
+
+  defp validate_setting(:type, value), do: OptsValidator.one_of(value, @types)
+  defp validate_setting(:doc, value), do: OptsValidator.optional_string(value)
+  defp validate_setting(:short, value), do: validate_short(value)
+  defp validate_setting(:default, value), do: validate_default(value)
+  defp validate_setting(:keep, value), do: OptsValidator.boolean(value)
+  defp validate_setting(:doc_arg, value), do: OptsValidator.string(value)
+  defp validate_setting(:default_doc, value), do: OptsValidator.optional_string(value)
+  defp validate_setting(:cast, value), do: OptsValidator.caster(value)
+  defp validate_setting(:deprecated, value), do: validate_deprecated(value)
+  defp validate_setting(_, _), do: :unknown
+
+  defp validate_short(nil), do: {:ok, nil}
+
+  defp validate_short(short) when is_atom(short) and not is_boolean(short) do
+    if String.match?(Atom.to_string(short), ~r/^\p{L}$/u),
+      do: {:ok, short},
+      else: {:error, "a single-letter atom"}
+  end
+
+  defp validate_short(_), do: {:error, "a single-letter atom"}
+
+  defp validate_default(f)
+       when is_function(f) and not is_function(f, 0) and not is_function(f, 1) do
+    {:error, "a function of arity 0 or 1, or a non-function value"}
+  end
+
+  defp validate_default(value), do: {:ok, value}
+
+  defp validate_deprecated(value) when is_boolean(value) when is_binary(value) when is_nil(value),
+    do: {:ok, value}
+
+  defp validate_deprecated(_), do: {:error, "a boolean, a string or nil"}
 
   defp default_doc_arg(:integer), do: "integer"
   defp default_doc_arg(:float), do: "float"
   defp default_doc_arg(:string), do: "string"
   defp default_doc_arg(:count), do: nil
   defp default_doc_arg(:boolean), do: nil
+
+  @doc """
+  Returns the option name in kebab case.
+  """
+  def cli_name(%__MODULE__{key: key}) do
+    key |> Atom.to_string() |> String.replace("_", "-")
+  end
 end

@@ -1,6 +1,6 @@
 defmodule MixVersion.Stage.TagGitHead do
   @moduledoc """
-  Stage that creates a possibly annotated tag at the current Git HEAD.
+  Stage that creates an annotated tag at the current Git HEAD.
   """
 
   @behaviour MixVersion.Stage
@@ -10,15 +10,9 @@ defmodule MixVersion.Stage.TagGitHead do
   def run(token) do
     tag_name = tag_name(token)
 
-    # Always provide a message to the git tag
     annotation = String.replace(token.opts.annotation, "%s", token.next_vsn)
 
-    tag_opts = [
-      annotate: token.opts.annotate,
-      annotation: annotation
-    ]
-
-    with :ok <- MixVersion.Git.tag(token.git_repo, tag_name, tag_opts) do
+    with :ok <- MixVersion.Git.tag(token.git_repo, tag_name, annotation: annotation) do
       MixVersion.CLI.writeln("created tag #{tag_name}")
       {:ok, token}
     end

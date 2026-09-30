@@ -8,6 +8,7 @@
 defmodule MixVersion.CLI do
   alias MixVersion.CLI.Argument
   alias MixVersion.CLI.Command
+  alias MixVersion.CLI.Option
   alias MixVersion.CLI.UsageFormat
 
   @moduledoc false
@@ -303,68 +304,66 @@ defmodule MixVersion.CLI do
     end
   end
 
-  def do_parse(argv, command) when is_list(command) when is_atom(command) do
+  defp do_parse(argv, command) when is_list(command) when is_atom(command) do
     do_parse(argv, Command.new(command))
   end
 
-  def do_parse(argv, %Command{} = command) do
-    parse_loop(
-      argv,
-      command,
-      _parent_opts_specs = [],
-      _opts_acc = %{},
-      _parsed_keys = MapSet.new(),
-      _sub_path = []
-    )
+  defp do_parse(argv, %Command{} = command) do
+    parse_loop(argv, command, _parent_opts_specs = [], _raw_opts = %{}, _sub_path = [])
   end
 
-  defp parse_loop(argv, command, parent_opts_specs, opts_acc, parsed_keys, rev_sub_path) do
-    %{subcommands: subcommands} = command
+  defp parse_loop(argv, command, parent_opts_specs, raw_opts, rev_sub_path) do
+    command = merge_opts_in(command, parent_opts_specs, rev_sub_path)
 
-    case subcommands do
-      [] ->
-        parse_leaf(argv, command, parent_opts_specs, opts_acc, parsed_keys, rev_sub_path)
-
-      [_ | _] ->
-        parse_nested(argv, command, parent_opts_specs, opts_acc, parsed_keys, rev_sub_path)
+    case command.subcommands do
+      [] -> parse_leaf(argv, command, raw_opts, rev_sub_path)
+      [_ | _] -> parse_nested(argv, command, raw_opts, rev_sub_path)
     end
   end
 
-  defp parse_leaf(argv, command, parent_opts_specs, opts_acc, parsed_keys, rev_sub_path) do
-    command = merge_opts_in(command, parent_opts_specs)
+  defp parse_leaf(argv, command, raw_opts, rev_sub_path) do
     %{options: options, arguments: arguments} = command
 
-    with {:ok, parsed_options, parsed_arguments} <- parse_opts(argv, options),
-         {:ok, %{help: false} = new_acc, _new_parsed_keys} <-
-           take_opts(options, parsed_options, opts_acc, parsed_keys),
-         {:ok, found_args} <- take_args(arguments, parsed_arguments) do
-      ok_build_parsed(command, new_acc, found_args, rev_sub_path)
-    else
-      {:ok, %{help: true} = new_acc, _new_parsed_keys} ->
-        ok_build_parsed(command, new_acc, [], rev_sub_path, :help)
+    {parsed_options, parsed_arguments, invalid} = parse_opts(argv, options)
+    raw_opts = collect_raw_opts(parsed_options, options, raw_opts)
 
-      {:error, reason} ->
-        {:error, reason, command}
+    with :continue <- check_help(raw_opts),
+         :ok <- check_invalid(invalid),
+         {:ok, opts} <- finalize_opts(options, raw_opts),
+         {:ok, found_args} <- take_args(arguments, parsed_arguments) do
+      ok_build_parsed(command, opts, found_args, rev_sub_path)
+    else
+      {:help, raw_opts} -> help_build_parsed(command, raw_opts, rev_sub_path)
+      {:error, reason} -> {:error, reason, command}
     end
   end
 
-  defp parse_nested(argv, command, parent_opts_specs, opts_acc, parsed_keys, rev_sub_path) do
-    command = merge_opts_in(command, parent_opts_specs)
+  defp parse_nested(argv, command, raw_opts, rev_sub_path) do
     %{options: options} = command
 
-    with {:ok, parsed_options, rest} <- parse_head_opts(argv, options),
-         {:ok, %{help: false} = new_acc, new_parsed_keys} <-
-           take_opts(options, parsed_options, opts_acc, parsed_keys),
+    {parsed_options, rest, invalid} = parse_head_opts(argv, options)
+    raw_opts = collect_raw_opts(parsed_options, options, raw_opts)
+
+    with :continue <- check_help(raw_opts),
+         :ok <- check_invalid(invalid),
          {:ok, [bin_sub | rest]} <- ensure_subcommand(rest),
          {:ok, key, sub_command} <- Command.resolve_subcommand(command, bin_sub) do
-      parse_loop(rest, sub_command, options, new_acc, new_parsed_keys, [key | rev_sub_path])
+      parse_loop(rest, sub_command, options, raw_opts, [key | rev_sub_path])
     else
-      {:ok, %{help: true} = new_acc, _new_parsed_keys} ->
-        ok_build_parsed(command, new_acc, [], rev_sub_path)
-
-      {:error, reason} ->
-        {:error, reason, command}
+      {:help, raw_opts} -> help_build_parsed(command, raw_opts, rev_sub_path)
+      {:error, reason} -> {:error, reason, command}
     end
+  end
+
+  defp check_help(%{help: true} = raw_opts), do: {:help, raw_opts}
+  defp check_help(_), do: :continue
+
+  defp check_invalid([]), do: :ok
+  defp check_invalid(invalid), do: {:error, {:invalid, invalid}}
+
+  defp help_build_parsed(command, raw_opts, rev_sub_path) do
+    opts = finalize_valid_opts(command.options, raw_opts)
+    ok_build_parsed(command, opts, %{}, rev_sub_path, :help)
   end
 
   defp ok_build_parsed(command, options, arguments, rev_sub_path, mode \\ :normal) do
@@ -393,21 +392,12 @@ defmodule MixVersion.CLI do
 
   defp parse_opts(argv, options) do
     {strict, aliases} = opts_specs_to_switches(options)
-
-    case OptionParser.parse(argv, strict: strict, aliases: aliases) do
-      {parsed_opts, parsed_args, []} -> {:ok, parsed_opts, parsed_args}
-      {_, _, [_ | _] = invalid} -> {:error, {:invalid, invalid}}
-    end
+    OptionParser.parse(argv, strict: strict, aliases: aliases)
   end
 
   defp parse_head_opts(argv, options) do
     {strict, aliases} = opts_specs_to_switches(options)
-
-    case OptionParser.parse_head(argv, strict: strict, aliases: aliases) do
-      {parsed_opts, rest, []} -> {:ok, parsed_opts, rest}
-      # {parsed_opts, [], []} -> {:error, :missing_subcommand}
-      {_, _, [_ | _] = invalid} -> {:error, {:invalid, invalid}}
-    end
+    OptionParser.parse_head(argv, strict: strict, aliases: aliases)
   end
 
   defp ensure_subcommand(rest) do
@@ -455,63 +445,78 @@ defmodule MixVersion.CLI do
   defp opt_alias(%{short: nil}), do: []
   defp opt_alias(%{short: a, key: key}), do: [{a, key}]
 
-  defp take_opts(schemes, opts, acc, parsed_keys) do
-    Enum.reduce_while(schemes, {:ok, acc, parsed_keys}, fn scheme, {:ok, acc, parsed_keys} ->
-      case collect_opt(scheme, opts, acc, parsed_keys) do
-        {:ok, acc, parsed_keys} -> {:cont, {:ok, acc, parsed_keys}}
+  defp collect_raw_opts(parsed_opts, options, raw_opts) do
+    Enum.reduce(parsed_opts, raw_opts, fn {key, value}, acc ->
+      case Keyword.fetch!(options, key) do
+        %{keep: true} -> Map.update(acc, key, [value], &[value | &1])
+        %{type: :count} -> Map.update(acc, key, value, &(&1 + value))
+        _ -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  defp finalize_opts(options, raw_opts) do
+    Enum.reduce_while(options, {:ok, %{}}, fn {key, scheme}, {:ok, acc} ->
+      case finalize_opt(scheme, raw_opts) do
+        {:ok, value} -> {:cont, {:ok, Map.put(acc, key, value)}}
+        :skip -> {:cont, {:ok, acc}}
         {:error, _} = err -> {:halt, err}
       end
     end)
   end
 
-  defp collect_opt({key, scheme}, opts, acc, parsed_keys) do
-    case resolve_opt_value(scheme, opts) do
-      {:ok, :parsed, value} ->
-        with {:ok, acc} <- cast_parsed_value(scheme, key, value, acc) do
-          {:ok, acc, MapSet.put(parsed_keys, key)}
-        end
+  defp finalize_valid_opts(options, raw_opts) do
+    Enum.reduce(options, %{}, fn {key, scheme}, acc ->
+      case finalize_opt(scheme, raw_opts) do
+        {:ok, value} -> Map.put(acc, key, value)
+        _ -> acc
+      end
+    end)
+  end
 
-      {:ok, :default, value} ->
-        if MapSet.member?(parsed_keys, key) do
-          {:ok, acc, parsed_keys}
-        else
-          {:ok, Map.put(acc, key, value), parsed_keys}
-        end
+  defp finalize_opt(%{key: key} = scheme, raw_opts) do
+    case Map.fetch(raw_opts, key) do
+      {:ok, raw} ->
+        maybe_warn_deprecated_opt(scheme)
+        cast_parsed_value(scheme, raw)
 
-      :skip ->
-        {:ok, acc, parsed_keys}
+      :error ->
+        default_to_result(scheme.default, key)
     end
   end
 
-  defp resolve_opt_value(%{keep: true, key: key, default: default}, opts) do
-    case collect_list_option(opts, key) do
-      [] -> default_to_result(default, key)
-      list -> {:ok, :parsed, list}
-    end
+  defp maybe_warn_deprecated_opt(%{deprecated: deprecated} = scheme)
+       when deprecated == true or is_binary(deprecated) do
+    warn(deprecation_message(scheme))
   end
 
-  defp resolve_opt_value(%{keep: false, key: key, default: default}, opts) do
-    case Keyword.fetch(opts, key) do
-      :error -> default_to_result(default, key)
-      {:ok, v} -> {:ok, :parsed, v}
-    end
+  defp maybe_warn_deprecated_opt(_scheme) do
+    :ok
   end
 
-  defp default_to_result({:default, v}, key), do: {:ok, :default, get_opt_default(v, key)}
+  defp deprecation_message(%{deprecated: true} = scheme) do
+    "option --#{Option.cli_name(scheme)} is deprecated"
+  end
+
+  defp deprecation_message(%{deprecated: message} = scheme) when is_binary(message) do
+    "option --#{Option.cli_name(scheme)} is deprecated, #{message}"
+  end
+
+  defp default_to_result({:default, v}, key), do: {:ok, get_opt_default(v, key)}
   defp default_to_result(:skip, _key), do: :skip
 
-  defp cast_parsed_value(%{keep: true, cast: cast}, key, list, acc) do
-    cast_list_option(key, cast, list, acc)
+  defp cast_parsed_value(%{keep: true, cast: cast, key: key}, reversed_list) do
+    cast_list_option(key, cast, :lists.reverse(reversed_list))
   end
 
-  defp cast_parsed_value(%{keep: false, cast: cast}, key, value, acc) do
-    cast_single_option(key, cast, value, acc)
+  defp cast_parsed_value(%{keep: false, cast: cast, key: key}, value) do
+    cast_single_option(key, cast, value)
   end
 
-  defp cast_single_option(key, cast, value, acc) do
+  defp cast_single_option(key, cast, value) do
     case apply_cast(cast, value) do
       {:ok, casted} ->
-        {:ok, Map.put(acc, key, casted)}
+        {:ok, casted}
 
       {:error, reason} ->
         {:error, {:option_cast, key, reason}}
@@ -521,7 +526,7 @@ defmodule MixVersion.CLI do
     end
   end
 
-  defp cast_list_option(key, cast, list, acc) do
+  defp cast_list_option(key, cast, list) do
     list
     |> Enum.reduce_while({:ok, []}, fn value, {:ok, casted_list} ->
       case apply_cast(cast, value) do
@@ -536,7 +541,7 @@ defmodule MixVersion.CLI do
       end
     end)
     |> case do
-      {:ok, reversed} -> {:ok, Map.put(acc, key, :lists.reverse(reversed))}
+      {:ok, reversed} -> {:ok, :lists.reverse(reversed)}
       {:error, _} = err -> err
     end
   end
@@ -545,16 +550,48 @@ defmodule MixVersion.CLI do
   defp get_opt_default(f, key) when is_function(f, 1), do: f.(key)
   defp get_opt_default(raw, _), do: raw
 
-  defp collect_list_option(opts, key) do
-    opts |> Enum.filter(fn {k, _} -> k == key end) |> Enum.map(&elem(&1, 1))
+  defp merge_opts_in(command, [], _rev_sub_path) do
+    command
   end
 
-  defp merge_opts_in(%Command{options: child_specs} = command, parent_specs) do
-    %{command | options: merge_opts_specs(parent_specs, child_specs)}
+  defp merge_opts_in(%Command{options: child_specs} = command, parent_specs, rev_sub_path) do
+    child_shorts = for {_, %{short: short}} when short != nil <- child_specs, do: short
+
+    inherited =
+      Enum.flat_map(parent_specs, fn {key, parent_spec} ->
+        case Keyword.fetch(child_specs, key) do
+          {:ok, child_spec} ->
+            check_redefinition!(parent_spec, child_spec, rev_sub_path)
+            []
+
+          :error ->
+            [{key, shadow_short(parent_spec, child_shorts)}]
+        end
+      end)
+
+    %{command | options: inherited ++ child_specs}
   end
 
-  defp merge_opts_specs(parent_specs, child_specs) do
-    Keyword.merge(parent_specs, child_specs)
+  defp shadow_short(%{short: short} = spec, child_shorts) do
+    if short in child_shorts, do: %{spec | short: nil}, else: spec
+  end
+
+  defp check_redefinition!(%{type: type, keep: keep}, %{type: type, keep: keep}, _) do
+    :ok
+  end
+
+  defp check_redefinition!(parent_spec, child_spec, rev_sub_path) do
+    {setting, parent_value, child_value} =
+      if parent_spec.type == child_spec.type,
+        do: {:keep, parent_spec.keep, child_spec.keep},
+        else: {:type, parent_spec.type, child_spec.type}
+
+    path = rev_sub_path |> :lists.reverse() |> Enum.join(" ")
+
+    raise ArgumentError,
+          "option #{inspect(child_spec.key)} is redefined with #{setting}: " <>
+            "#{inspect(child_value)} in sub-command #{inspect(path)} but has " <>
+            "#{setting}: #{inspect(parent_value)} in its parent command"
   end
 
   defp take_args(schemes, args) do

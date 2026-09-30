@@ -70,7 +70,7 @@ defmodule MixVersion.CLI.UsageFormat do
         _ ->
           adapter.format_section(
             "Sub-commands",
-            adapter.format_subcommands(build_subcommands(command), fmt_opts),
+            adapter.format_subcommands(Command.build_subcommands(command), fmt_opts),
             fmt_opts
           )
       end
@@ -89,15 +89,19 @@ defmodule MixVersion.CLI.UsageFormat do
       end
 
     options_section =
-      adapter.format_section("Options", adapter.format_options(command, fmt_opts), fmt_opts)
+      adapter.format_section(
+        "Options",
+        adapter.format_options(without_deprecated_options(command), fmt_opts),
+        fmt_opts
+      )
 
     [head, synopsis_section, subcommands_section, arguments_section, options_section]
     |> Enum.reject(&is_nil/1)
     |> Enum.intersperse(adapter.section_margin())
   end
 
-  defp build_subcommands(command) do
-    Enum.map(command.subcommands, fn {key, v} -> {key, Command.new(v)} end)
+  defp without_deprecated_options(command) do
+    %{command | options: Enum.reject(command.options, fn {_, opt} -> opt.deprecated end)}
   end
 
   defp default_fmt_opts do

@@ -57,6 +57,36 @@ defmodule MixVersion.VersionTest do
     assert Subapp.tag_message(dir, "v0.1.1") =~ "shipped 0.1.1"
   end
 
+  test "tags are annotated" do
+    dir = Subapp.create()
+
+    Subapp.mix_version!(dir, ~w(-p))
+
+    # An annotated tag is a git object of type "tag" carrying the message. A
+    # lightweight tag is only a ref to the commit, so its type would be
+    # "commit".
+    assert "tag" == Subapp.tag_type(dir, "v0.1.1")
+  end
+
+  test "the deprecated --annotate flag is accepted and ignored" do
+    dir = Subapp.create()
+
+    output = Subapp.mix_version!(dir, ~w(-p --no-annotate))
+
+    assert output =~ "option --annotate is deprecated"
+    assert "tag" == Subapp.tag_type(dir, "v0.1.1")
+  end
+
+  test "the annotate project configuration is ignored" do
+    dir = Subapp.create()
+    Subapp.configure_versioning(dir, annotate: false)
+
+    output = Subapp.mix_version!(dir, ~w(-p))
+
+    refute output =~ "annotate"
+    assert "tag" == Subapp.tag_type(dir, "v0.1.1")
+  end
+
   test "defaults are read from the versioning project configuration" do
     dir = Subapp.create()
     Subapp.configure_versioning(dir, commit_msg: "bump to %s", tag_prefix: "release/")

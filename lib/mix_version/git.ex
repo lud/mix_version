@@ -184,22 +184,15 @@ defmodule MixVersion.Git do
   end
 
   @doc """
-  Creates a Git tag with the given name at the current HEAD.
+  Creates an annotated Git tag with the given name at the current HEAD.
 
   ### Options
 
   * `:annotation` - required, the tag message.
-  * `:annotate` - when `true`, creates an annotated tag carrying the
-    annotation message. Defaults to `false`.
   """
   def tag(%Repo{} = repo, name, opts) do
     message = Keyword.fetch!(opts, :annotation)
     args = ["tag", name, "-m", message]
-
-    args =
-      if Keyword.get(opts, :annotate, false),
-        do: args ++ ["-a"],
-        else: args
 
     with {:ok, _} <- git(repo, args), do: :ok
   end

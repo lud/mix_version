@@ -8,6 +8,7 @@
 defmodule MixVersion.CLI.Command do
   alias MixVersion.CLI.Argument
   alias MixVersion.CLI.Option
+  alias MixVersion.CLI.OptsValidator
 
   @moduledoc false
 
@@ -24,22 +25,23 @@ defmodule MixVersion.CLI.Command do
 
   @type option :: [option_opt]
   @type option_opt ::
-          {:key, atom}
-          | {:doc, String.t()}
+          {:doc, String.t()}
           | {:type, Option.vtype()}
           | {:short, atom}
           | {:default, term}
           | {:keep, boolean}
           | {:doc_arg, String.t()}
           | {:default_doc, String.t()}
+          | {:cast, nil | Option.caster()}
+          | {:deprecated, nil | boolean | String.t()}
 
   @type argument :: [argument_opt]
   @type argument_opt ::
-          {:key, atom}
-          | {:required, boolean}
+          {:required, boolean}
           | {:type, Argument.vtype()}
           | {:doc, binary | nil}
           | {:cast, nil | Argument.caster()}
+          | {:repeat, boolean}
 
   @doc """
   Returns a command definition to be used with the parser, or invoked as a sub
@@ -60,28 +62,51 @@ defmodule MixVersion.CLI.Command do
           name: binary | nil,
           version: binary | nil,
           doc: binary | nil,
-          subcommands: [t],
+          subcommands: [{atom, command | module | t}],
           execute: (-> term) | nil
         }
 
   @help_option_def [type: :boolean, default: false, doc: "Displays this help."]
 
-  def new(conf) when is_list(conf) do
-    options =
-      conf
-      |> Keyword.get(:options, [])
-      |> add_help()
-      |> Enum.map(&build_option/1)
+  @doc """
+  Builds a command struct from a keyword definition, or from a module
+  implementing this behaviour.
 
-    arguments = conf |> Keyword.get(:arguments, []) |> build_args()
-    subcommands = conf |> Keyword.get(:subcommands, []) |> validate_subcommands()
-    execute = conf |> Keyword.get(:execute, nil) |> validate_execute()
+  The accepted entries are listed in the module documentation. Raises an
+  `ArgumentError` for invalid definitions, for instance when a command declares
+  both `:arguments` and `:subcommands`.
+
+  ### Examples
+
+  The returned struct holds the normalized options, including the automatic
+  `:help` option:
+
+      iex> command = CliMate.CLI.Command.new(name: "hello", options: [upcase: [type: :boolean]])
+      iex> command.name
+      "hello"
+      iex> Keyword.keys(command.options)
+      [:upcase, :help]
+  """
+  def new(command), do: build(command, nil)
+
+  defp build(%__MODULE__{} = command, _subject) do
+    command
+  end
+
+  defp build(conf, subject) when is_list(conf) do
+    subject = subject || command_subject(conf)
+    settings = OptsValidator.validate!(conf, subject, &validate_setting/2)
+
+    options = settings |> Map.get(:options, []) |> build_options(subject)
+    arguments = settings |> Map.get(:arguments, []) |> build_args(subject)
+    subcommands = settings |> Map.get(:subcommands, []) |> validate_subcommands(subject)
 
     case {arguments, subcommands} do
       {[_ | _], [_ | _]} ->
         raise ArgumentError,
-              "cannot define both arguments and subcommands, " <>
-                "got arguments: #{inspect(arguments)}, subcommands: #{inspect(subcommands)}"
+              "cannot define both arguments and subcommands in #{subject}, " <>
+                "got arguments: #{inspect(Enum.map(arguments, & &1.key))}, " <>
+                "subcommands: #{inspect(Keyword.keys(subcommands))}"
 
       _ ->
         :ok
@@ -90,17 +115,29 @@ defmodule MixVersion.CLI.Command do
     %__MODULE__{
       options: options,
       arguments: arguments,
-      name: Keyword.get(conf, :name, nil),
-      module: Keyword.get(conf, :module, nil),
-      version: Keyword.get(conf, :version, nil),
-      doc: Keyword.get(conf, :doc, nil),
+      name: Map.get(settings, :name),
+      module: Map.get(settings, :module),
+      version: Map.get(settings, :version),
+      doc: Map.get(settings, :doc),
       subcommands: subcommands,
-      execute: execute
+      execute: Map.get(settings, :execute)
     }
   end
 
-  def new(module) when is_atom(module) do
+  defp build(module, subject) when is_atom(module) do
+    if not (Code.ensure_loaded?(module) and function_exported?(module, :command, 0)) do
+      raise ArgumentError,
+            "invalid #{subject || "command"}, expected a module implementing command/0, " <>
+              "got: #{inspect(module)}"
+    end
+
     base = module.command()
+
+    if not is_list(base) do
+      raise ArgumentError,
+            "invalid #{subject || "command"}, expected #{inspect(module)}.command/0 " <>
+              "to return a keyword list, got: #{inspect(base)}"
+    end
 
     spec =
       if function_exported?(module, :execute, 1) do
@@ -109,13 +146,55 @@ defmodule MixVersion.CLI.Command do
         Keyword.put_new(base, :module, module)
       end
 
-    new(spec)
+    build(spec, subject)
   end
 
-  defp add_help(options) do
+  defp build(other, subject) do
+    raise ArgumentError,
+          "invalid #{subject || "command"}, expected a keyword list or a module, " <>
+            "got: #{inspect(other)}"
+  end
+
+  defp command_subject(%__MODULE__{name: name}) when is_binary(name),
+    do: "command #{inspect(name)}"
+
+  defp command_subject(%__MODULE__{module: mod}) when mod != nil, do: "command #{inspect(mod)}"
+  defp command_subject(%__MODULE__{}), do: "command"
+
+  defp command_subject(conf) do
+    case {Keyword.get(conf, :name), Keyword.get(conf, :module)} do
+      {name, _} when is_binary(name) -> "command #{inspect(name)}"
+      {_, mod} when is_atom(mod) and mod != nil -> "command #{inspect(mod)}"
+      _ -> "command"
+    end
+  end
+
+  defp validate_setting(:name, value), do: OptsValidator.optional_string(value)
+  defp validate_setting(:version, value), do: OptsValidator.optional_string(value)
+  defp validate_setting(:doc, value), do: OptsValidator.optional_string(value)
+  defp validate_setting(:module, value) when is_atom(value), do: {:ok, value}
+  defp validate_setting(:module, _), do: {:error, "a module"}
+  defp validate_setting(:options, value), do: OptsValidator.keyword_list(value)
+  defp validate_setting(:arguments, value), do: OptsValidator.keyword_list(value)
+  defp validate_setting(:subcommands, value), do: OptsValidator.keyword_list(value)
+  defp validate_setting(:execute, value) when is_function(value, 1), do: {:ok, value}
+  defp validate_setting(:execute, nil), do: {:ok, nil}
+  defp validate_setting(:execute, _), do: {:error, "a function of arity 1 or nil"}
+  defp validate_setting(_, _), do: :unknown
+
+  defp build_options(options, subject) do
+    :ok = OptsValidator.duplicate_keys!(options, "option", subject)
+
+    options
+    |> add_help(subject)
+    |> Enum.map(fn {key, conf} -> {key, Option.new(key, conf)} end)
+    |> tap(&check_duplicate_shorts(&1, subject))
+  end
+
+  defp add_help(options, subject) do
     :ok =
       case Keyword.fetch(options, :help) do
-        {:ok, _} -> raise ArgumentError, "the :help option cannot be overriden"
+        {:ok, _} -> raise ArgumentError, "the :help option cannot be overriden in #{subject}"
         :error -> :ok
       end
 
@@ -123,30 +202,48 @@ defmodule MixVersion.CLI.Command do
     options ++ [{:help, @help_option_def}]
   end
 
-  defp build_option({key, conf}), do: {key, Option.new(key, conf)}
+  defp check_duplicate_shorts(options, subject) do
+    Enum.reduce(options, %{}, fn
+      {_, %{short: nil}}, seen ->
+        seen
 
-  defp build_args(list) do
+      {key, %{short: short}}, seen ->
+        case seen do
+          %{^short => other} ->
+            raise ArgumentError,
+                  "options #{inspect(other)} and #{inspect(key)} use the same short " <>
+                    "#{inspect(short)} in #{subject}"
+
+          _ ->
+            Map.put(seen, short, key)
+        end
+    end)
+  end
+
+  defp build_args(list, subject) do
+    :ok = OptsValidator.duplicate_keys!(list, "argument", subject)
+
     # non-required arguments must be last
     # a variadic argument must be the last one
     prev = %{not_required: nil, variadic: nil}
 
-    {args, _} = Enum.map_reduce(list, prev, &reduce_args/2)
+    {args, _} = Enum.map_reduce(list, prev, &reduce_args(&1, &2, subject))
     args
   end
 
-  defp reduce_args(arg, prev) do
-    arg = build_argument(arg)
+  defp reduce_args({key, conf}, prev, subject) do
+    arg = Argument.new(key, conf)
 
     case arg do
       %{key: key, required: true} when prev.not_required != nil ->
         raise ArgumentError,
               "non-required arguments must be defined after required ones " <>
-                "but #{inspect(key)} was defined after #{inspect(prev.not_required)}"
+                "but #{inspect(key)} was defined after #{inspect(prev.not_required)} in #{subject}"
 
       %{key: key} when prev.variadic != nil ->
         raise ArgumentError,
               "repeated argument must be the last argument " <>
-                "but #{inspect(key)} was defined after #{inspect(prev.variadic)}"
+                "but #{inspect(key)} was defined after #{inspect(prev.variadic)} in #{subject}"
 
       %{key: key} = arg ->
         prev = if arg.required, do: prev, else: %{prev | not_required: key}
@@ -156,25 +253,42 @@ defmodule MixVersion.CLI.Command do
     end
   end
 
-  defp build_argument({key, conf}), do: Argument.new(key, conf)
+  defp validate_subcommands(list, subject) do
+    :ok = OptsValidator.duplicate_keys!(list, "sub-command", subject)
 
-  defp validate_subcommands(list) when is_list(list) do
+    Enum.each(list, fn
+      {_, sub} when is_list(sub) when is_atom(sub) when is_struct(sub, __MODULE__) ->
+        :ok
+
+      {key, sub} ->
+        raise ArgumentError,
+              "invalid sub-command #{inspect(key)} of #{subject}, " <>
+                "expected a keyword list or a module, got: #{inspect(sub)}"
+    end)
+
     list
   end
 
-  defp validate_subcommands(other) do
-    raise ArgumentError,
-          "invalid subcommands, expected keyword list, got #{inspect(other)}"
+  @doc false
+  def build_subcommands(command) do
+    Enum.map(command.subcommands, fn {key, sub} ->
+      {key, build_subcommand(command, key, sub)}
+    end)
   end
 
-  defp validate_execute(nil), do: nil
-  defp validate_execute(f) when is_function(f, 1), do: f
-
-  defp validate_execute(other) do
-    raise ArgumentError,
-          "invalid :execute option expected function of arity 1 or nil, got: #{inspect(other)}"
+  defp build_subcommand(command, key, sub) do
+    build(sub, "sub-command #{inspect(key)} of #{command_subject(command)}")
   end
 
+  @doc """
+  Resolves a sub-command name given on the command line into its definition
+  from the parent command.
+
+  Returns `{:ok, key, sub_command}` where `key` is the atom form of `bin_key`
+  and `sub_command` is the resolved definition built with `new/1`. Returns
+  `{:error, {:unknown_subcommand, bin_key}}` when the name matches no declared
+  sub-command.
+  """
   def resolve_subcommand(command, bin_key) do
     String.to_existing_atom(bin_key)
   rescue
@@ -185,11 +299,8 @@ defmodule MixVersion.CLI.Command do
 
   defp do_resolve_subcommand(command, key, bin_key) do
     case Keyword.fetch(command.subcommands, key) do
-      {:ok, opts} when is_list(opts) ->
-        {:ok, key, new(opts)}
-
-      {:ok, module} when is_atom(module) ->
-        {:ok, key, new(module)}
+      {:ok, sub} ->
+        {:ok, key, build_subcommand(command, key, sub)}
 
       :error ->
         {:error, {:unknown_subcommand, bin_key}}

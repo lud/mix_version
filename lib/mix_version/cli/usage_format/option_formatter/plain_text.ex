@@ -159,7 +159,7 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
 
   defp long_signature(option, ansi_enabled?) do
     %Option{type: type} = option
-    name = name(option)
+    name = Option.cli_name(option)
 
     len = String.length(name) + 2
 
@@ -255,10 +255,6 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.PlainText do
 
         [first_padding, doc]
     end
-  end
-
-  defp name(%Option{key: key}) do
-    key |> Atom.to_string() |> String.replace("_", "-")
   end
 
   defp bright(iodata), do: [IO.ANSI.bright(), iodata, IO.ANSI.reset()]

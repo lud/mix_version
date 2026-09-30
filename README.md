@@ -88,7 +88,6 @@ end
 
 defp versioning do
   [
-    annotate:   true,
     annotation: "new version %s",
     commit_msg: "new version %s",
     tag_prefix: "v"
@@ -103,8 +102,8 @@ This configuration is totally optional. The sample values above are the default
 values used by `mix version`.
 
 Configuration can be overriden by command line options. For instance, if
-`:annotate` is set to `false` in configuration, you can use the `--annotate` CLI
-flag to force it to be `true`.
+`:tag_prefix` is set to `"release/"` in configuration, you can use
+`--tag-prefix v` to create a `v`-prefixed tag instead.
 
 <!-- doc-end -->
 
@@ -139,9 +138,6 @@ optionnaly a pre-release tag as in `1.0.0-rc2`.
 
 -n, --new-version <string>
       Set the new version number. Defaults to nil.
-
--a, --annotate
-      Create an annotated git tag.
 
 -c, --commit-msg <string>
       Define the commit message, with all '%s' replaced by the new VSN.

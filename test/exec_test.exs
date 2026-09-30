@@ -14,7 +14,6 @@ defmodule MixVersion.ExecTest do
     minor: false,
     patch: false,
     new_version: nil,
-    annotate: true,
     commit_msg: "new version %s",
     annotation: "new version %s",
     tag_prefix: "v",

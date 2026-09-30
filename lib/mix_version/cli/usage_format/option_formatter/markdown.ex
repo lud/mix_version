@@ -119,7 +119,7 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.Markdown do
   defp short_long(option) do
     %Option{short: s} = option
 
-    long = ["`--", name(option), doc(option), "`"]
+    long = ["`--", Option.cli_name(option), doc(option), "`"]
 
     short =
       case s do
@@ -128,10 +128,6 @@ defmodule MixVersion.CLI.UsageFormat.OptionFormatter.Markdown do
       end
 
     [short, long]
-  end
-
-  defp name(%Option{key: k}) do
-    k |> Atom.to_string() |> String.replace("_", "-")
   end
 
   defp doc(%Option{type: t}) when t in [:boolean, :count], do: []
