@@ -192,7 +192,7 @@ defmodule MixVersion.Git do
   """
   def tag(%Repo{} = repo, name, opts) do
     message = Keyword.fetch!(opts, :annotation)
-    args = ["tag", name, "-m", message]
+    args = ["tag", name, "--cleanup=whitespace", "-m", message]
 
     with {:ok, _} <- git(repo, args), do: :ok
   end

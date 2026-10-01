@@ -293,4 +293,30 @@ defmodule MixVersion.ExecTest do
     assert {:error, "Options --annotation and --annotation-file are mutually exclusive"} =
              exec(env(dir, patch: true, annotation: "release %s", annotation_file: path))
   end
+
+  test "markdown headings in the annotation are kept in the tag message" do
+    dir = Subapp.create()
+
+    annotation = """
+    Release %s
+
+    ## Features
+
+    - thing
+    # heading
+    """
+
+    assert {:ok, _} = exec(env(dir, patch: true, annotation: annotation))
+
+    expected = """
+    Release 0.1.1
+
+    ## Features
+
+    - thing
+    # heading
+    """
+
+    assert String.trim(expected) == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
 end
