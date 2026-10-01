@@ -150,6 +150,48 @@ defmodule MixVersion.ExecTest do
     assert Subapp.git!(dir, ~w(show HEAD --name-only --format=%s)) =~ "VERSION"
   end
 
+  test "before_commit hooks of arity 2 receive the release information" do
+    dir = Subapp.create()
+    parent = self()
+
+    hooks = [
+      fn vsn ->
+        send(parent, {:arity_1, vsn})
+        :ok
+      end,
+      fn vsn, info ->
+        send(parent, {:arity_2, vsn, info})
+        :ok
+      end
+    ]
+
+    test_env =
+      env(dir, [patch: true, annotation: "release %s", tag_prefix: "rel-"], before_commit: hooks)
+
+    assert {:ok, _} = exec(test_env)
+
+    assert_received {:arity_1, "0.1.1"}
+    assert_received {:arity_2, "0.1.1", info}
+
+    assert %{
+             current_vsn: "0.1.0",
+             next_vsn: "0.1.1",
+             next_version: %Version{major: 0, minor: 1, patch: 1, pre: []},
+             tag_name: "rel-0.1.1",
+             annotation: "release 0.1.1"
+           } == info
+  end
+
+  test "an invalid hook aborts the run" do
+    dir = Subapp.create()
+    hooks = [fn -> :ok end]
+
+    assert {:error, "Invalid hook, expected a function of arity 1 or 2" <> _} =
+             exec(env(dir, [patch: true], before_commit: hooks))
+
+    assert [] == Subapp.tags(dir)
+  end
+
   test "a hook returning an error aborts the run" do
     dir = Subapp.create()
     hooks = [fn _vsn -> {:error, "boom"} end]
@@ -164,7 +206,7 @@ defmodule MixVersion.ExecTest do
 
     assert {:error, message} = exec(env(dir, [patch: true], before_commit: hooks))
     assert message =~ "Hook :before_commit returned invalid result"
-    assert message =~ ":wat"
+    assert message =~ "got: :wat"
   end
 
   test "outside of a git repository the mixfile is still updated" do

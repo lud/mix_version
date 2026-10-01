@@ -146,6 +146,27 @@ defmodule MixVersion.VersionTest do
     assert Subapp.git!(dir, ~w(show HEAD --name-only --format=%s)) =~ "VERSION"
   end
 
+  test "a before_commit hook of arity 2 receives the annotation from a file" do
+    dir = Subapp.create()
+
+    Subapp.configure_versioning(dir, """
+    [
+      before_commit: [
+        fn _vsn, info -> File.write!("NOTES", info.annotation) end,
+        add: "NOTES"
+      ]
+    ]
+    """)
+
+    path = Briefly.create!()
+    File.write!(path, "intro for %s\n")
+
+    Subapp.mix_version!(dir, ["-p", "-F", path])
+
+    assert "intro for 0.1.1\n" == Subapp.read!(dir, "NOTES")
+    assert "intro for 0.1.1" == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
   test "the version of the subapp is reported by --info" do
     dir = Subapp.create()
 
