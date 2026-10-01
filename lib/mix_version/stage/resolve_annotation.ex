@@ -10,6 +10,10 @@ defmodule MixVersion.Stage.ResolveAnnotation do
 
   def run(token) do
     annotation = String.replace(token.opts.annotation, "%s", token.next_vsn)
-    {:ok, MixVersion.Token.put_annotation(token, annotation)}
+
+    case String.trim(annotation) do
+      "" -> {:error, "the tag annotation is empty"}
+      _ -> {:ok, MixVersion.Token.put_annotation(token, annotation)}
+    end
   end
 end

@@ -186,7 +186,7 @@ defmodule MixVersion.ExecTest do
     dir = Subapp.create()
     hooks = [fn -> :ok end]
 
-    assert {:error, "Invalid hook, expected a function of arity 1 or 2" <> _} =
+    assert {:error, "Hook :before_commit is invalid, expected a function of arity 1 or 2" <> _} =
              exec(env(dir, [patch: true], before_commit: hooks))
 
     assert [] == Subapp.tags(dir)
@@ -318,5 +318,28 @@ defmodule MixVersion.ExecTest do
     """
 
     assert String.trim(expected) == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
+  test "an empty annotation aborts the run before any change" do
+    dir = Subapp.create()
+    subjects = Subapp.log_subjects(dir)
+
+    assert {:error, "the tag annotation is empty"} =
+             exec(env(dir, patch: true, annotation: " \n\n "))
+
+    assert Subapp.read!(dir, "mix.exs") =~ ~s(version: "0.1.0")
+    assert subjects == Subapp.log_subjects(dir)
+    assert [] == Subapp.tags(dir)
+  end
+
+  test "an empty annotation file aborts the run" do
+    dir = Subapp.create()
+    path = Briefly.create!()
+    File.write!(path, "\n")
+
+    assert {:error, "the tag annotation is empty"} =
+             exec(annotation_file_env(dir, path, patch: true))
+
+    assert [] == Subapp.tags(dir)
   end
 end

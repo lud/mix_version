@@ -38,6 +38,10 @@ defmodule MixVersion.Stage.ApplyHook do
       {:invalid, other} ->
         {:error,
          "Hook #{inspect(key)} returned invalid result, expected :ok or {:error, binary}, got: #{inspect(other)}"}
+
+      {:invalid_hook, other} ->
+        {:error,
+         "Hook #{inspect(key)} is invalid, expected a function of arity 1 or 2, or {:add, path}, got: #{inspect(other)}"}
     end
   end
 
@@ -46,6 +50,7 @@ defmodule MixVersion.Stage.ApplyHook do
       {:ok, token} -> apply_hook(hooks, token)
       {:error, _} = err -> err
       {:invalid, _} = invalid -> invalid
+      {:invalid_hook, _} = invalid -> invalid
     end
   end
 
@@ -73,8 +78,7 @@ defmodule MixVersion.Stage.ApplyHook do
   end
 
   defp apply_hook(other, _token) do
-    {:error,
-     "Invalid hook, expected a function of arity 1 or 2, or {:add, path}, got: #{inspect(other)}"}
+    {:invalid_hook, other}
   end
 
   defp hook_info(token) do
