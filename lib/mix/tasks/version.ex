@@ -49,9 +49,16 @@ defmodule Mix.Tasks.Version do
       annotation: [
         type: :string,
         short: :A,
-        doc: "Define the tag annotation message, with all '%s' replaced by the new VSN.",
-        default: &__MODULE__.default_opt/1,
-        default_doc: default_doc.(:annotation, @default_annotation)
+        doc:
+          "Define the tag annotation message, with all '%s' replaced by the new VSN. " <>
+            default_doc.(:annotation, @default_annotation)
+      ],
+      annotation_file: [
+        type: :string,
+        short: :F,
+        doc:
+          "Read the tag annotation message from the given file, with all '%s' replaced by the new VSN. " <>
+            "Cannot be used with --annotation."
       ],
       tag_prefix: [
         type: :string,
@@ -84,10 +91,12 @@ defmodule Mix.Tasks.Version do
 
   @stages [
     MixVersion.Stage.PrintAndStop,
+    MixVersion.Stage.ReadAnnotationFile,
     MixVersion.Stage.DetectGitCommand,
     MixVersion.Stage.FindGitRepo,
     MixVersion.Stage.CheckUnstaged,
     MixVersion.Stage.GetNextVsn,
+    MixVersion.Stage.ResolveAnnotation,
     MixVersion.Stage.CheckGitTag,
     {MixVersion.Stage.ApplyHook, [:before_commit]},
     MixVersion.Stage.UpdateMixfile,
@@ -108,7 +117,7 @@ defmodule Mix.Tasks.Version do
     %{options: opts} = command
 
     env = %{
-      opts: opts,
+      opts: put_default_annotation(opts),
       hooks: collect_hooks(),
       current_vsn: current_vsn(),
       mixfile_path: Mix.Project.project_file(),
@@ -130,7 +139,8 @@ defmodule Mix.Tasks.Version do
 
   @doc false
   def exec(env) do
-    with :ok <- check_mutex_opts(env.opts) do
+    with :ok <- check_mutex_opts(env.opts),
+         :ok <- check_annotation_opts(env.opts) do
       run_stages(@stages, MixVersion.Token.new(env))
     end
   end
@@ -152,6 +162,12 @@ defmodule Mix.Tasks.Version do
       :__not_configured__ -> default_default
       value -> value
     end
+  end
+
+  defp put_default_annotation(%{annotation_file: _} = opts), do: opts
+
+  defp put_default_annotation(opts) do
+    Map.put_new_lazy(opts, :annotation, fn -> default_opt(:annotation) end)
   end
 
   defp current_vsn do
@@ -221,4 +237,10 @@ defmodule Mix.Tasks.Version do
          "Options --patch, --minor, --major, --new-version and --tag-current are mutually exclusive"}
     end
   end
+
+  defp check_annotation_opts(%{annotation: _, annotation_file: _}) do
+    {:error, "Options --annotation and --annotation-file are mutually exclusive"}
+  end
+
+  defp check_annotation_opts(_), do: :ok
 end

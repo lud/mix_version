@@ -11,6 +11,7 @@ defmodule MixVersion.Token do
     git_repo: nil,
     current_vsn: nil,
     next_vsn: nil,
+    annotation: nil,
     hooks: %{},
     mixfile_path: nil,
     cwd: nil

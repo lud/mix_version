@@ -10,9 +10,7 @@ defmodule MixVersion.Stage.TagGitHead do
   def run(token) do
     tag_name = tag_name(token)
 
-    annotation = String.replace(token.opts.annotation, "%s", token.next_vsn)
-
-    with :ok <- MixVersion.Git.tag(token.git_repo, tag_name, annotation: annotation) do
+    with :ok <- MixVersion.Git.tag(token.git_repo, tag_name, annotation: token.annotation) do
       MixVersion.CLI.writeln("created tag #{tag_name}")
       {:ok, token}
     end

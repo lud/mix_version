@@ -57,6 +57,27 @@ defmodule MixVersion.VersionTest do
     assert Subapp.tag_message(dir, "v0.1.1") =~ "shipped 0.1.1"
   end
 
+  test "the tag annotation can be read from a file" do
+    dir = Subapp.create()
+    path = Briefly.create!()
+    File.write!(path, "shipped %s\n\nwith notes\n")
+
+    Subapp.mix_version!(dir, ["-p", "--annotation-file", path])
+
+    assert "shipped 0.1.1\n\nwith notes" == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
+  test "the annotation file replaces the configured annotation" do
+    dir = Subapp.create()
+    Subapp.configure_versioning(dir, annotation: "configured %s")
+    path = Briefly.create!()
+    File.write!(path, "from file %s")
+
+    Subapp.mix_version!(dir, ["-p", "-F", path])
+
+    assert "from file 0.1.1" == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
   test "tags are annotated" do
     dir = Subapp.create()
 

@@ -145,6 +145,10 @@ optionnaly a pre-release tag as in `1.0.0-rc2`.
 -A, --annotation <string>
       Define the tag annotation message, with all '%s' replaced by the new VSN.
 
+-F, --annotation-file <string>
+      Read the tag annotation message from the given file, with all '%s'
+      replaced by the new VSN. Cannot be used with --annotation.
+
 -x, --tag-prefix <string>
       Define the tag prefix.
 

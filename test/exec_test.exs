@@ -30,6 +30,11 @@ defmodule MixVersion.ExecTest do
     }
   end
 
+  defp annotation_file_env(dir, path, opts) do
+    test_env = env(dir, [annotation_file: path] ++ opts)
+    update_in(test_env.opts, &Map.delete(&1, :annotation))
+  end
+
   defp exec(env) do
     result = Mix.Tasks.Version.exec(env)
 
@@ -190,5 +195,60 @@ defmodule MixVersion.ExecTest do
     assert "0.1.0" == token.next_vsn
     assert "v0.1.0" in Subapp.tags(dir)
     assert "new version 0.1.0" == hd(Subapp.log_subjects(dir))
+  end
+
+  test "the tag annotation can be read from a file" do
+    dir = Subapp.create()
+    path = Briefly.create!()
+
+    File.write!(path, """
+    Release %s
+
+    This release focuses on things.
+    """)
+
+    assert {:ok, token} = exec(annotation_file_env(dir, path, patch: true))
+
+    expected = """
+    Release 0.1.1
+
+    This release focuses on things.
+    """
+
+    assert expected == token.annotation
+    assert String.trim(expected) == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
+  test "a relative annotation file path is read from the project directory" do
+    dir = Subapp.create()
+    _ = Subapp.write_file(dir, ".gitignore", "/tmp/\n")
+    :ok = Subapp.commit(dir, "ignore tmp")
+    _ = Subapp.write_file(dir, "tmp/notes.txt", "notes for %s")
+
+    assert {:ok, _} = exec(annotation_file_env(dir, "tmp/notes.txt", patch: true))
+    assert "notes for 0.1.1" == String.trim(Subapp.tag_message(dir, "v0.1.1"))
+  end
+
+  test "a missing annotation file aborts the run before any change" do
+    dir = Subapp.create()
+    path = Path.join(Briefly.create!(type: :directory), "missing.txt")
+    subjects = Subapp.log_subjects(dir)
+
+    assert {:error, "could not read annotation file " <> message} =
+             exec(annotation_file_env(dir, path, patch: true))
+
+    assert message =~ "missing.txt"
+    assert message =~ "no such file or directory"
+    assert Subapp.read!(dir, "mix.exs") =~ ~s(version: "0.1.0")
+    assert subjects == Subapp.log_subjects(dir)
+    assert [] == Subapp.tags(dir)
+  end
+
+  test "the annotation and annotation file options are mutually exclusive" do
+    dir = Subapp.create()
+    path = Briefly.create!()
+
+    assert {:error, "Options --annotation and --annotation-file are mutually exclusive"} =
+             exec(env(dir, patch: true, annotation: "release %s", annotation_file: path))
   end
 end
