@@ -133,7 +133,7 @@ defmodule Mix.Tasks.Version do
 
       {:stop, reason} ->
         reason |> to_iodata() |> CLI.warn()
-        CLI.halt()
+        CLI.halt(1)
     end
   end
 

@@ -167,6 +167,15 @@ defmodule MixVersion.VersionTest do
     assert "intro for 0.1.1" == String.trim(Subapp.tag_message(dir, "v0.1.1"))
   end
 
+  test "declining a prompt exits with a non-zero status" do
+    dir = Subapp.create()
+    Subapp.write_file(dir, "NOTES.md", "some notes\n")
+
+    assert {output, 1} = Subapp.mix_version(dir, ~w(-p), input: "n\n")
+    assert output =~ "canceled"
+    assert [] == Subapp.tags(dir)
+  end
+
   test "the version of the subapp is reported by --info" do
     dir = Subapp.create()
 

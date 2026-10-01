@@ -147,11 +147,17 @@ defmodule MixVersion.Support.Subapp do
 
   @doc """
   Runs `mix version` in the given subapp and returns `{output, exit_code}`.
+
+  The `:input` option is written to the standard input of the command, for
+  answering prompts.
   """
-  def mix_version(dir, argv \\ []) do
+  def mix_version(dir, argv \\ [], opts \\ []) do
     assert_own_repo!(dir)
 
-    System.cmd("mix", ["version" | argv],
+    input_path = Briefly.create!()
+    File.write!(input_path, Keyword.get(opts, :input, ""))
+
+    System.cmd("sh", ["-c", ~s(exec mix version "$@" < "$0"), input_path | argv],
       cd: dir,
       stderr_to_stdout: true,
       env: env()
