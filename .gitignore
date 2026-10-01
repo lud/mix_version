@@ -23,3 +23,5 @@ erl_crash.dump
 mix_version-*.tar
 
 .tool-versions
+
+/tmp/

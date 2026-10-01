@@ -28,7 +28,7 @@ You can install MixVersion as a regular dependency in your Elixir projects:
 ```elixir
 defp deps do
   [
-    {:mix_version, "~> 2.5", only: [:dev, :test], runtime: false},
+    {:mix_version, "~> 2.6", only: [:dev, :test], runtime: false},
   ]
 end
 ```

@@ -4,7 +4,7 @@ defmodule MixVersion.MixProject do
   def project do
     [
       app: :mix_version,
-      version: "2.5.3",
+      version: "2.6.0",
       description:
         "A simple tool to update an Elixir project version number and commit/tag the change.",
       elixir: "~> 1.10",
@@ -69,17 +69,26 @@ defmodule MixVersion.MixProject do
   defp versioning do
     [
       before_commit: [
-        fn vsn ->
-          case System.cmd("git", ["cliff", "--tag", vsn, "-o", "CHANGELOG.md"],
-                 stderr_to_stdout: true
-               ) do
-            {_, 0} -> IO.puts("Updated CHANGELOG.md with #{vsn}")
-            {out, _} -> {:error, "Could not update CHANGELOG.md:\n\n #{out}"}
-          end
-        end,
-        add: "CHANGELOG.md"
+        &readmix/1,
+        {:add, "README.md"},
+        &gen_changelog/2,
+        {:add, "CHANGELOG.md"}
       ]
     ]
+  end
+
+  def readmix(vsn) do
+    rdmx = Readmix.new(vars: %{app_vsn: vsn})
+    :ok = Readmix.update_file(rdmx, "README.md")
+  end
+
+  defp gen_changelog(vsn, info) do
+    args = ["cliff", "--tag", vsn, "--with-tag-message", info.annotation, "-o", "CHANGELOG.md"]
+
+    case System.cmd("git", args, stderr_to_stdout: true) do
+      {_, 0} -> IO.puts("Updated CHANGELOG.md with #{vsn}")
+      {out, _} -> {:error, "Could not update CHANGELOG.md:\n\n #{out}"}
+    end
   end
 
   defp package do
