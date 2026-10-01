@@ -72,6 +72,13 @@ defmodule Mix.Tasks.Version do
         short: :k,
         default: false,
         doc: "Commit and tag with the current version."
+      ],
+      confirm: [
+        type: :boolean,
+        default: false,
+        doc:
+          "Print the commit message and the tag to create, " <>
+            "and ask for confirmation before making any change."
       ]
     ]
   ]
@@ -96,8 +103,9 @@ defmodule Mix.Tasks.Version do
     MixVersion.Stage.FindGitRepo,
     MixVersion.Stage.CheckUnstaged,
     MixVersion.Stage.GetNextVsn,
-    MixVersion.Stage.ResolveAnnotation,
+    MixVersion.Stage.ResolveMessages,
     MixVersion.Stage.CheckGitTag,
+    MixVersion.Stage.Confirm,
     {MixVersion.Stage.ApplyHook, [:before_commit]},
     MixVersion.Stage.UpdateMixfile,
     MixVersion.Stage.CommitChanges,

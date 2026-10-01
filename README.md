@@ -240,6 +240,10 @@ optionnaly a pre-release tag as in `1.0.0-rc2`.
 -k, --tag-current
       Commit and tag with the current version. Defaults to false.
 
+    --confirm
+      Print the commit message and the tag to create, and ask for confirmation
+      before making any change. Defaults to false.
+
     --help
       Displays this help.
 ```

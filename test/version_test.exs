@@ -176,6 +176,37 @@ defmodule MixVersion.VersionTest do
     assert [] == Subapp.tags(dir)
   end
 
+  test "--confirm prints the release summary and proceeds when accepted" do
+    dir = Subapp.create()
+    path = Briefly.create!()
+    File.write!(path, "Release %s\n\n## Features\n")
+
+    assert {output, 0} =
+             Subapp.mix_version(dir, ["-p", "--confirm", "-F", path], input: "y\n")
+
+    assert output =~ "Tag name:        v0.1.1\n"
+    assert output =~ "Commit message:  new version 0.1.1\n"
+    assert output =~ "Tag annotation:  Release 0.1.1\n\n                 ## Features\n"
+    assert "v0.1.1" in Subapp.tags(dir)
+  end
+
+  test "--confirm stops before any change when declined" do
+    dir = Subapp.create()
+
+    Subapp.configure_versioning(dir, """
+    [before_commit: [fn vsn -> File.write!("VERSION", vsn) end]]
+    """)
+
+    subjects = Subapp.log_subjects(dir)
+
+    assert {output, 1} = Subapp.mix_version(dir, ~w(-p --confirm), input: "n\n")
+    assert output =~ "canceled"
+    refute File.exists?(Path.join(dir, "VERSION"))
+    assert Subapp.read!(dir, "mix.exs") =~ ~s(version: "0.1.0")
+    assert subjects == Subapp.log_subjects(dir)
+    assert [] == Subapp.tags(dir)
+  end
+
   test "the version of the subapp is reported by --info" do
     dir = Subapp.create()
 

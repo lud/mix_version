@@ -17,7 +17,8 @@ defmodule MixVersion.ExecTest do
     commit_msg: "new version %s",
     annotation: "new version %s",
     tag_prefix: "v",
-    tag_current: false
+    tag_current: false,
+    confirm: false
   }
 
   defp env(dir, opts, extra \\ []) do
