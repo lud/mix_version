@@ -106,9 +106,13 @@ defmodule MixVersion.Git do
   defp relative_path(%Repo{root: root}, path) do
     case Path.type(path) do
       :absolute ->
-        case Path.relative_to(path, root) do
-          ^path -> {:error, {:external_path, path}}
-          rel -> {:ok, rel}
+        # The result cannot be compared to `path` as it may be normalized (on
+        # Windows the drive letter is downcased and separators are changed).
+        rel = Path.relative_to(path, root)
+
+        case Path.type(rel) do
+          :absolute -> {:error, {:external_path, path}}
+          _ -> {:ok, rel}
         end
 
       :relative ->
